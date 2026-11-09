@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Defined once here as CSS variables, then exposed to Tailwind
+ * through @theme so utilities like bg-paper, text-ink, border-line work.
+ */
+:root {
+  color-scheme: light;
+
+  /* Colour */
+  --paper: #f5f1e8;
+  --paper-2: #ece5d7;
+  --ink: #1f1d1a;
+  --ink-muted: #5f5a51;
+  --line: #d8d0c0;
+  --accent: #a0573b;
+  /* Darker clay for small text on --paper-2, keeps AA contrast */
+  --accent-strong: #8a4630;
+  --accent-soft: #e9d6c9;
+  --sage: #6e7b63;
+  /* Darker sage for small text, keeps AA contrast */
+  --sage-strong: #55614b;
+  --sage-soft: #dfe2d6;
+
+  /* Layout */
+  --container: 76rem;
+  --measure: 68ch;
+  --gutter: 1rem;
+  --section-y: 4.5rem;
+  --header-h: 4.25rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+    --section-y: 6.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 3rem;
+    --section-y: 8rem;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-sage: var(--sage);
+  --color-sage-strong: var(--sage-strong);
+  --color-sage-soft: var(--sage-soft);
+
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-public-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --spacing-gutter: var(--gutter);
+  --spacing-section: var(--section-y);
+  --spacing-header: var(--header-h);
+  --container-site: var(--container);
+  --container-measure: var(--measure);
+
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-md: 6px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem; /* 17px */
+    line-height: 1.65;
+    font-feature-settings: "kern", "liga";
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: 1.125rem; /* 18px */
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  /* Page container with consistent side gutters */
+  .container-site {
+    width: 100%;
+    max-width: calc(var(--container) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* Small uppercase label used for section numbers and kickers */
+  .kicker {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
