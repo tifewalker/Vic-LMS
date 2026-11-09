@@ -31,7 +31,7 @@ export function TrainingAreas() {
                 </span>
               }
             >
-              <div className="grid grid-cols-[2.25rem_1fr] gap-x-3 md:grid-cols-12 md:gap-x-8">
+              <div className="grid grid-cols-[2.25rem_1fr] gap-x-3 md:grid-cols-12 md:gap-x-8 md:pr-[2.125rem]">
                 <div className="col-start-2 grid gap-y-8 md:col-span-9 md:col-start-4 lg:grid-cols-9 lg:gap-x-8">
                   <div className="lg:col-span-5">
                     {area.intro.length > 0 ? (

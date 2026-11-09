@@ -31,7 +31,16 @@ export function PhotoFigure({ image, aspect, sizes, placeholderCaption, preload,
   return (
     <figure className={className}>
       <div className={cx("relative overflow-hidden rounded-sm bg-paper-2", aspect)}>
-        <Image src={image.src} alt={image.alt} fill sizes={sizes} preload={preload} className="object-cover" />
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          sizes={sizes}
+          preload={preload}
+          fetchPriority={preload ? "high" : undefined}
+          loading={preload ? "eager" : "lazy"}
+          className="object-cover"
+        />
       </div>
       {image.caption ? <figcaption className="mt-3 text-sm text-ink-muted">{image.caption}</figcaption> : null}
     </figure>

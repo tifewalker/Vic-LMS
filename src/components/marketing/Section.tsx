@@ -14,7 +14,7 @@ export function Section({ id, labelledBy, tone = "paper", className, children }:
     <section
       id={id}
       aria-labelledby={labelledBy}
-      className={cx("anchor py-section", tone === "paper-2" && "bg-paper-2", className)}
+      className={cx("anchor-section py-section", tone === "paper-2" && "bg-paper-2", className)}
     >
       <div className="container-site">{children}</div>
     </section>
@@ -37,7 +37,7 @@ export function SectionHeader({ number, titleId, title, kicker, className }: Hea
   return (
     <header className={cx("grid gap-y-4 border-t border-ink/80 pt-5 md:grid-cols-12 md:gap-x-8", className)}>
       <p className="kicker flex gap-3 md:col-span-3 md:flex-col md:gap-1.5">
-        <span className="font-serif text-[0.9375rem] tracking-normal text-accent-strong tabular-nums">{number}</span>
+        <span className="font-serif text-[0.9375rem] font-normal tracking-normal text-accent-strong tabular-nums">{number}</span>
         {kicker ? <span>{kicker}</span> : null}
       </p>
       <h2 id={titleId} className="text-[clamp(2rem,4.6vw,3.5rem)] md:col-span-9">

@@ -1,7 +1,6 @@
 import { ApplyLink } from "@/components/ui/ApplyLink";
 import { finalCta } from "@/content/landing";
 import { navItems } from "@/content/navigation";
-import { site } from "@/lib/site";
 import { Brand } from "./Brand";
 import { MobileMenu } from "./MobileMenu";
 
@@ -9,7 +8,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper">
       <div className="container-site flex h-header items-center justify-between gap-4">
-        <a href="#top" className="shrink-0 rounded-sm" aria-label={`${site.institution.name} and ${site.operator.name}, back to top`}>
+        <a href="#top" className="shrink-0 rounded-sm">
           <Brand />
         </a>
 

@@ -9,11 +9,11 @@ export function SiteFooter() {
   return (
     <footer id="contact" aria-labelledby="contact-title" className="anchor border-t border-line">
       <div className="container-site grid gap-y-12 py-16 md:py-20 lg:grid-cols-12 lg:gap-x-8">
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-5">
           <Brand />
         </div>
 
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-7">
           <h2 id="contact-title" className="text-[1.75rem] md:text-[2rem]">
             {contact.heading}
           </h2>

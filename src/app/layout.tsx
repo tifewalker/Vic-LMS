@@ -7,7 +7,9 @@ import "./globals.css";
 
 const newsreader = Newsreader({
   subsets: ["latin"],
-  axes: ["opsz"],
+  // Headings only use the regular weight. A single static weight and no opsz axis
+  // keep the preloaded font files small.
+  weight: "400",
   style: ["normal", "italic"],
   variable: "--font-newsreader",
   display: "swap",

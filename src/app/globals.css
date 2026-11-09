@@ -104,10 +104,6 @@
     text-wrap: balance;
   }
 
-  p {
-    text-wrap: pretty;
-  }
-
   ::selection {
     background: var(--accent-soft);
     color: var(--ink);
@@ -132,6 +128,10 @@
   /* Anchored sections clear the sticky header */
   .anchor {
     scroll-margin-top: var(--header-h);
+  }
+  /* Padded sections: land with the top rule just under the header, not the padding */
+  .anchor-section {
+    scroll-margin-top: calc(var(--header-h) - var(--section-y) + 1.5rem);
   }
 
   /* Dark (ink) blocks: light focus ring and muted text that keep AA contrast */
