@@ -1,6 +1,7 @@
-import { About } from "@/components/marketing/About";
 import { Hero } from "@/components/marketing/Hero";
+import { About } from "@/components/marketing/About";
 import { ProgrammeTimeline } from "@/components/marketing/ProgrammeTimeline";
+import { TrainingAreas } from "@/components/marketing/TrainingAreas";
 
 export default function LandingPage() {
   return (
@@ -8,6 +9,7 @@ export default function LandingPage() {
       <Hero />
       <About />
       <ProgrammeTimeline />
+      <TrainingAreas />
     </main>
   );
 }
