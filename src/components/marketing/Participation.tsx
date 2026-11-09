@@ -20,9 +20,7 @@ export function Participation() {
   return (
     <Section id="eligibility" labelledBy="who-title" tone="paper-2">
       <div className="grid gap-y-4 border-t border-ink/80 pt-5 md:grid-cols-12 md:gap-x-8">
-        <p className="kicker md:col-span-3">
-          <span className="font-serif text-[0.9375rem] font-normal tracking-normal text-accent-strong tabular-nums">04</span>
-        </p>
+        <div aria-hidden="true" className="hidden md:col-span-3 md:block" />
         <div className="grid gap-y-16 md:col-span-9 lg:grid-cols-2 lg:gap-x-12">
           {columns.map((col) => (
             <article key={col.id} aria-labelledby={col.id}>

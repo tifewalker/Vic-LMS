@@ -6,7 +6,7 @@ import { Section, SectionBody, SectionHeader } from "./Section";
 export function Faq() {
   return (
     <Section id="faq" labelledBy="faq-title">
-      <SectionHeader number="07" titleId="faq-title" title={faq.heading} />
+      <SectionHeader titleId="faq-title" title={faq.heading} />
       <SectionBody className="mt-8 md:mt-10">
         <ol className="border-t border-line">
           {faq.items.map((item, i) => (

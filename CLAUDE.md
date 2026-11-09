@@ -67,7 +67,7 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
   - `--accent-soft` #E9D6C9
   - `--sage` #6E7B63 (sparing second accent, e.g. Phase Two)
 - **Type:** a readable serif for headings (e.g. Newsreader or Source Serif 4) and a plain sans for body and UI (e.g. Public Sans or Instrument Sans). Large, well-spaced headings, comfortable body size (17 to 18px), max line length around 68ch.
-- **Structure:** hairline rules (1px `--line`) to separate content, numbered sections (01, 02...), generous whitespace, left-aligned text, a clear grid. Asymmetry is fine.
+- **Structure:** hairline rules (1px `--line`) to separate content, short kickers instead of section numbers (client removed the 01, 02... section tags), generous whitespace, left-aligned text, a clear grid. Asymmetry is fine.
 - **Corners:** small radius (2 to 6px) or square. No pills except maybe tiny tags.
 - **Imagery:** real photos only, supplied by the client. Until then use plain neutral placeholders with a caption like "Campus photo", not illustrations or AI images.
 - **Motion:** subtle fade or rise on scroll at most, under 300ms, and off under `prefers-reduced-motion`.
@@ -95,6 +95,8 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - Use real images from the OAUSTECH website, downloaded into `public/images/` and served with `next/image`. Never hotlink.
   - Logo: https://oaustech.edu.ng/images/logo.png to `public/images/oaustech-logo.png`
   - Campus photo: https://oaustech.edu.ng/cache/resized/0930ca64ead13e2113232a6df145a9c7.jpg to `public/images/oaustech-campus.jpg` (used in the hero)
+  - Auditorium: https://oaustech.edu.ng/cache/resized/e5032fe998fcdad7d034560cc740340a.jpg to `public/images/oaustech-auditorium.jpg` (About)
+  - Library: https://oaustech.edu.ng/cache/resized/25409442948fc7b1a29bf29244f3c3f6.jpg to `public/images/oaustech-library.jpg` (Why OAUSTECH)
 - If a download fails, use a neutral placeholder captioned "Campus photo" and report it. Never substitute stock photos or AI images.
 - Write proper, descriptive alt text. No em dashes in alt text.
 - The About and Why OAUSTECH sections have image slots that work with or without a photo. More client photos may be added later; register them in one place (`src/content/images.ts`) rather than hard-coding paths in components.

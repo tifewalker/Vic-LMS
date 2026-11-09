@@ -22,7 +22,6 @@ export function Section({ id, labelledBy, tone = "paper", className, children }:
 }
 
 type HeaderProps = {
-  number: string;
   titleId: string;
   title: string;
   kicker?: string;
@@ -30,16 +29,13 @@ type HeaderProps = {
 };
 
 /**
- * Section opening: a hairline rule, the section number and kicker in a narrow
- * left column, and the serif heading across the rest of the grid.
+ * Section opening: a hairline rule, an optional kicker in a narrow left column,
+ * and the serif heading across the rest of the grid.
  */
-export function SectionHeader({ number, titleId, title, kicker, className }: HeaderProps) {
+export function SectionHeader({ titleId, title, kicker, className }: HeaderProps) {
   return (
     <header className={cx("grid gap-y-4 border-t border-ink/80 pt-5 md:grid-cols-12 md:gap-x-8", className)}>
-      <p className="kicker flex gap-3 md:col-span-3 md:flex-col md:gap-1.5">
-        <span className="font-serif text-[0.9375rem] font-normal tracking-normal text-accent-strong tabular-nums">{number}</span>
-        {kicker ? <span>{kicker}</span> : null}
-      </p>
+      {kicker ? <p className="kicker md:col-span-3 md:pt-2">{kicker}</p> : <div aria-hidden="true" className="hidden md:col-span-3 md:block" />}
       <h2 id={titleId} className="text-[clamp(2rem,4.6vw,3.5rem)] md:col-span-9">
         {title}
       </h2>

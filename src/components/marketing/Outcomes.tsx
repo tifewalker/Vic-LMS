@@ -5,7 +5,7 @@ import { Section, SectionBody, SectionHeader } from "./Section";
 export function Outcomes() {
   return (
     <Section id="outcomes" labelledBy="outcomes-title">
-      <SectionHeader number="05" titleId="outcomes-title" title={outcomes.heading} />
+      <SectionHeader titleId="outcomes-title" title={outcomes.heading} />
       <SectionBody className="mt-8 md:mt-10">
         <p className="max-w-measure">{outcomes.listLead}</p>
         <ul className="mt-6 grid border-t border-line sm:grid-cols-2 sm:gap-x-10">

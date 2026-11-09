@@ -10,7 +10,7 @@ export function About() {
 
   return (
     <Section id="about" labelledBy="about-title">
-      <SectionHeader number="01" kicker={about.kicker} titleId="about-title" title={about.heading} />
+      <SectionHeader kicker={about.kicker} titleId="about-title" title={about.heading} />
 
       <div className="mt-10 grid gap-y-14 md:mt-14 lg:grid-cols-12 lg:gap-x-8">
         <div className="lg:col-span-7 xl:col-span-6">
@@ -20,11 +20,11 @@ export function About() {
               <p key={para.slice(0, 24)}>{para}</p>
             ))}
           </div>
-          {/* Optional photo. Set imageSlots.about in src/content/images.ts to show one. */}
+          {/* Photo slot: set imageSlots.about in src/content/images.ts, or null for none. */}
           <PhotoFigure
             image={imageSlots.about}
-            aspect="aspect-[4/3]"
-            sizes="(min-width: 1024px) 40vw, 100vw"
+            aspect="aspect-[3/2] sm:aspect-[16/9]"
+            sizes="(min-width: 1312px) 620px, (min-width: 1024px) 55vw, 100vw"
             className="mt-12"
           />
         </div>

@@ -8,7 +8,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export function TrainingAreas() {
   return (
     <Section id="training-areas" labelledBy="training-areas-title">
-      <SectionHeader number="03" titleId="training-areas-title" title={trainingAreas.kicker} />
+      <SectionHeader titleId="training-areas-title" title={trainingAreas.kicker} />
 
       <ol className="mt-10 border-t border-line md:mt-14">
         {trainingAreas.areas.map((area) => (

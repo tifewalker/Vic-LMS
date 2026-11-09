@@ -12,7 +12,6 @@ export function WhyOaustech() {
   return (
     <Section id="why-oaustech" labelledBy="why-oaustech-title" tone="paper-2">
       <SectionHeader
-        number="06"
         kicker={whyOaustech.kicker}
         titleId="why-oaustech-title"
         title={whyOaustech.heading}
@@ -55,11 +54,11 @@ export function WhyOaustech() {
           </dl>
         </div>
 
-        {/* Optional photo. Set imageSlots.whyOaustech in src/content/images.ts to show one. */}
+        {/* Photo slot: set imageSlots.whyOaustech in src/content/images.ts, or null for none. */}
         <PhotoFigure
           image={photo}
           aspect="aspect-[3/2] md:aspect-[16/7]"
-          sizes="(min-width: 1312px) 900px, 100vw"
+          sizes="(min-width: 1312px) 900px, (min-width: 768px) 75vw, 100vw"
           className="mt-14"
         />
       </SectionBody>

@@ -17,7 +17,7 @@ const span = (p: Phase) => `${p.weeks.from} / ${p.weeks.to + 1}`;
 export function ProgrammeTimeline() {
   return (
     <Section id="structure" labelledBy="structure-title" tone="paper-2">
-      <SectionHeader number="02" kicker={structure.kicker} titleId="structure-title" title={structure.heading} />
+      <SectionHeader kicker={structure.kicker} titleId="structure-title" title={structure.heading} />
       <SectionBody className="mt-6 md:mt-8">
         <p className="max-w-measure">{structure.intro}</p>
       </SectionBody>
