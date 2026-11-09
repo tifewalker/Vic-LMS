@@ -27,7 +27,13 @@ export type TrainingArea = {
   note?: string;
 };
 
-export type FaqItem = { question: string; answer: string };
+/** Inline link targets resolved from src/lib/site.ts at render time. */
+export type LinkTarget = "phone" | "form";
+
+/** A run of text where some pieces are links. */
+export type RichText = (string | { text: string; link: LinkTarget })[];
+
+export type FaqItem = { question: string; answer: RichText };
 
 export type DefinitionItem = { term: string; description: string };
 
@@ -38,7 +44,8 @@ export const programme = {
 
 export const hero = {
   eyebrow: programme.title,
-  headline: ["26 Weeks to Learn.", "Build.", "Innovate.", "Become an Entrepreneur."],
+  /** Line breaks are a layout choice; the words are the copy's, unchanged. */
+  headline: ["26 Weeks to Learn.", "Build. Innovate.", "Become an Entrepreneur."],
   strapline: "Powered by practical learning. Driven by innovation. Designed for the future.",
   question:
     "Are you ready to move beyond theoretical knowledge and acquire practical skills that can open doors to new opportunities?",
@@ -366,43 +373,44 @@ export const whyOaustech = {
 export const faq = {
   heading: "Frequently Asked Questions",
   items: [
-    { question: "How long is the programme?", answer: "The programme runs for 26 weeks." },
+    { question: "How long is the programme?", answer: ["The programme runs for 26 weeks."] },
     {
       question: "How will the training be delivered?",
-      answer:
-        "The first six weeks will be delivered virtually. Weeks 7–26 will involve physical, hands-on training at OAUSTECH, Okitipupa.",
+      answer: ["The first six weeks will be delivered virtually. Weeks 7–26 will involve physical, hands-on training at OAUSTECH, Okitipupa."],
     },
     {
       question: "Where will the physical training take place?",
-      answer:
-        "Physical training will take place at Olusegun Agagu University of Science and Technology, Okitipupa, Ondo State.",
+      answer: ["Physical training will take place at Olusegun Agagu University of Science and Technology, Okitipupa, Ondo State."],
     },
     {
       question: "Do I need prior experience in technology?",
-      answer:
-        "Prior experience may be helpful for some training areas, but the programme is intended to introduce and develop relevant knowledge and practical skills. Specific entry requirements will be communicated by the organisers.",
+      answer: ["Prior experience may be helpful for some training areas, but the programme is intended to introduce and develop relevant knowledge and practical skills. Specific entry requirements will be communicated by the organisers."],
     },
     {
       question: "Will there be practical drone training?",
-      answer:
-        "Drone technology and aerial data applications are proposed as part of the training areas. Practical flying activities will depend on equipment availability, appropriate supervision and applicable safety and aviation requirements.",
+      answer: ["Drone technology and aerial data applications are proposed as part of the training areas. Practical flying activities will depend on equipment availability, appropriate supervision and applicable safety and aviation requirements."],
     },
     {
       question: "Will I receive a certificate?",
-      // TODO(content): certificate arrangements are "to be confirmed". Copy reads like an internal note;
-      // confirm whether to show this answer or "Details to be announced" until organisers confirm.
-      answer:
-        "Certificate arrangements should be confirmed by the programme organisers. Please contact the programme team for details.",
+      // Certificate arrangements are still to be confirmed, so the copy's internal wording is replaced
+      // with "Details to be announced" (agreed with the client).
+      answer: [
+        "Details to be announced. Please contact the ",
+        { text: "programme team", link: "phone" },
+        " for details.",
+      ],
     },
     {
       question: "How do I apply?",
-      answer:
-        "Complete the official application form using the application link provided on this page. Ensure that the information submitted is accurate.",
+      answer: [
+        "Complete the official application form using the ",
+        { text: "application link", link: "form" },
+        " provided on this page. Ensure that the information submitted is accurate.",
+      ],
     },
     {
       question: "Who can I contact for enquiries?",
-      // The phone number is appended from site.phone in the component.
-      answer: "You can contact the programme team on",
+      answer: ["You can contact the programme team on ", { text: "+234 703 203 8565", link: "phone" }, "."],
     },
   ] satisfies FaqItem[],
 } as const;

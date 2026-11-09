@@ -74,7 +74,6 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: calc(var(--header-h) + 1rem);
     -webkit-text-size-adjust: 100%;
   }
 
@@ -128,6 +127,21 @@
     max-width: calc(var(--container) + 2 * var(--gutter));
     margin-inline: auto;
     padding-inline: var(--gutter);
+  }
+
+  /* Anchored sections clear the sticky header */
+  .anchor {
+    scroll-margin-top: var(--header-h);
+  }
+
+  /* Dark (ink) blocks: light focus ring and muted text that keep AA contrast */
+  .on-ink {
+    background: var(--ink);
+    color: var(--paper);
+    --ink-muted: #c9c1b2;
+  }
+  .on-ink :focus-visible {
+    outline-color: var(--paper);
   }
 
   /* Small uppercase label used for section numbers and kickers */
