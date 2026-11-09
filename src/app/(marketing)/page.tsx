@@ -4,6 +4,7 @@ import { ProgrammeTimeline } from "@/components/marketing/ProgrammeTimeline";
 import { TrainingAreas } from "@/components/marketing/TrainingAreas";
 import { Participation } from "@/components/marketing/Participation";
 import { Outcomes } from "@/components/marketing/Outcomes";
+import { WhyOaustech } from "@/components/marketing/WhyOaustech";
 
 export default function LandingPage() {
   return (
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <TrainingAreas />
       <Participation />
       <Outcomes />
+      <WhyOaustech />
     </main>
   );
 }
