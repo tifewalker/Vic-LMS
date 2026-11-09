@@ -25,6 +25,9 @@
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20.9 <25"
+  },
   "pnpm": {
     "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
   }
