@@ -3,6 +3,7 @@ import { About } from "@/components/marketing/About";
 import { ProgrammeTimeline } from "@/components/marketing/ProgrammeTimeline";
 import { TrainingAreas } from "@/components/marketing/TrainingAreas";
 import { Participation } from "@/components/marketing/Participation";
+import { Outcomes } from "@/components/marketing/Outcomes";
 
 export default function LandingPage() {
   return (
@@ -12,6 +13,7 @@ export default function LandingPage() {
       <ProgrammeTimeline />
       <TrainingAreas />
       <Participation />
+      <Outcomes />
     </main>
   );
 }
