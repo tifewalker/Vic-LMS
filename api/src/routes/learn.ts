@@ -6,6 +6,7 @@ import { embed } from "../lib/invites.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
+import { registerContentRoutes } from "./content.js";
 
 /**
  * Student routes. Mounted at /student.
@@ -69,13 +70,19 @@ learnRouter.get("/overview", async (req, res) => {
   const me = req.profile!.id;
   const { data: links } = await admin.from("programme_students").select("programme_id").eq("student_id", me);
   const ids = (links ?? []).map((l) => l.programme_id);
-  if (!ids.length) return res.json({ programmes: [], next_class: null, recent_grades: [], due: [] });
+  if (!ids.length) return res.json({ programmes: [], next_class: null, recent_grades: [], due: [], announcements: [] });
 
   const now = new Date().toISOString();
-  const [{ data: programmes }, { data: next }, { data: assessments }] = await Promise.all([
+  const [{ data: programmes }, { data: next }, { data: assessments }, { data: announcements }] = await Promise.all([
     admin.from("programmes").select("id, title, description").in("id", ids).order("title"),
     admin.from("classes").select(`${CLASS_COLUMNS}, programme:programmes(title)`).in("programme_id", ids).gte("ends_at", now).order("starts_at").limit(1),
     admin.from("assessments").select(`${ASSESSMENT_COLUMNS}, programme:programmes(title)`).in("programme_id", ids).eq("published", true),
+    admin
+      .from("announcements")
+      .select("id, programme_id, class_id, title, body, pinned, created_at, programme:programmes(title)")
+      .in("programme_id", ids)
+      .order("created_at", { ascending: false })
+      .limit(3),
   ]);
   const all = await withMine(me, assessments ?? []);
   type Mine = { status: string; grade: { score: number; feedback: string; graded_at: string } | null } | null;
@@ -87,7 +94,7 @@ learnRouter.get("/overview", async (req, res) => {
     .filter((a) => (a.my_submission as Mine)?.grade)
     .sort((x, y) => (y.my_submission as NonNullable<Mine>).grade!.graded_at.localeCompare((x.my_submission as NonNullable<Mine>).grade!.graded_at))
     .slice(0, 5);
-  res.json({ programmes: programmes ?? [], next_class: next?.[0] ?? null, recent_grades: recent, due });
+  res.json({ programmes: programmes ?? [], next_class: next?.[0] ?? null, recent_grades: recent, due, announcements: announcements ?? [] });
 });
 
 learnRouter.get("/programmes/:id", async (req, res) => {
@@ -203,3 +210,4 @@ learnRouter.get("/assessments/:id/my-file", async (req, res) => {
 });
 
 registerCommunityRoutes(learnRouter);
+registerContentRoutes(learnRouter);

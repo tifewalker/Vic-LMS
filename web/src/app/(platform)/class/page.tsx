@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Announcements } from "@/components/platform/Announcements";
 import { AssessmentForm } from "@/components/platform/AssessmentForm";
 import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { Discussion } from "@/components/platform/Discussion";
 import { LiveQA } from "@/components/platform/LiveQA";
+import { Materials } from "@/components/platform/Materials";
 import { useMe } from "@/components/platform/RequireRole";
 import { StudentAssessments } from "@/components/platform/StudentAssessments";
 import { ClassStatus, Tabs } from "@/components/platform/Tabs";
@@ -15,7 +17,7 @@ import { formatDateTime, formatTimeRange } from "@/lib/dates";
 import type { Assessment, ClassItem, People, StudentAssessment } from "@/lib/types";
 
 type Data = { class: ClassItem; people: People; assessments: (Assessment | StudentAssessment)[]; can_teach: boolean };
-type Tab = "overview" | "live" | "discussion" | "assessments" | "recording";
+type Tab = "overview" | "live" | "discussion" | "announcements" | "materials" | "assessments" | "recording";
 
 function ClassPage() {
   const me = useMe();
@@ -116,6 +118,8 @@ function ClassPage() {
             { id: "overview", label: "Overview" },
             { id: "live", label: "Live Q&A" },
             { id: "discussion", label: "Discussion" },
+            { id: "announcements", label: "Announcements" },
+            { id: "materials", label: "Materials" },
             { id: "assessments", label: `Assessments (${data.assessments.length})` },
             { id: "recording", label: "Recording" },
           ]}
@@ -176,6 +180,10 @@ function ClassPage() {
         {tab === "live" ? <LiveQA base={base} classId={c.id} people={data.people} canTeach={teach} /> : null}
 
         {tab === "discussion" ? <Discussion base={base} programmeId={c.programme_id} classId={c.id} people={data.people} canTeach={teach} /> : null}
+
+        {tab === "announcements" ? <Announcements base={base} programmeId={c.programme_id} classId={c.id} canTeach={teach} /> : null}
+
+        {tab === "materials" ? <Materials base={base} programmeId={c.programme_id} classId={c.id} canTeach={teach} /> : null}
 
         {tab === "assessments" ? (
           isStudent ? (

@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Announcements } from "@/components/platform/Announcements";
 import { AssessmentForm } from "@/components/platform/AssessmentForm";
 import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { ClassForm } from "@/components/platform/ClassForm";
 import { ClassList } from "@/components/platform/ClassList";
 import { ConfirmButton } from "@/components/platform/ConfirmButton";
+import { Materials } from "@/components/platform/Materials";
 import { PeoplePicker } from "@/components/platform/PeoplePicker";
 import { Tabs } from "@/components/platform/Tabs";
 import { Button, Notice, PageTitle } from "@/components/platform/ui";
@@ -21,7 +23,7 @@ type Detail = {
   classes: ClassItem[];
   assessments: Assessment[];
 };
-type Tab = "classes" | "students" | "tutors" | "assessments";
+type Tab = "classes" | "students" | "tutors" | "assessments" | "announcements" | "materials";
 
 const accountLabel: Record<string, string> = { invited: "Not activated", active: "Active", suspended: "Suspended" };
 
@@ -57,7 +59,8 @@ function ProgrammeView() {
   if (error && !data) return <Notice tone="error">{error}</Notice>;
   if (!data) return <p className="text-ink-muted">Loading…</p>;
 
-  const addLabel = { classes: "New class", students: "Enrol students", tutors: "Assign tutors", assessments: "New assessment" }[tab];
+  // Announcements and Materials have their own add buttons.
+  const addLabel = { classes: "New class", students: "Enrol students", tutors: "Assign tutors", assessments: "New assessment", announcements: null, materials: null }[tab];
   const people = tab === "students" ? data.students : data.tutors;
 
   return (
@@ -84,10 +87,12 @@ function ProgrammeView() {
               { id: "students", label: `Students (${data.students.length})` },
               { id: "tutors", label: `Tutors (${data.tutors.length})` },
               { id: "assessments", label: `Assessments (${data.assessments.length})` },
+              { id: "announcements", label: "Announcements" },
+              { id: "materials", label: "Materials" },
             ]}
           />
         </div>
-        {!adding ? (
+        {!adding && addLabel ? (
           <Button size="sm" onClick={() => setAdding(true)}>
             {addLabel}
           </Button>
@@ -168,6 +173,9 @@ function ProgrammeView() {
             </div>
           </>
         ) : null}
+
+        {tab === "announcements" ? <Announcements base="/tutor" programmeId={id} classes={data.classes} canTeach /> : null}
+        {tab === "materials" ? <Materials base="/tutor" programmeId={id} canTeach /> : null}
 
         {tab === "assessments" ? (
           <>

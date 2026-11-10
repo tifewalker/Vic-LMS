@@ -13,6 +13,7 @@ type Overview = {
   next_class: ClassItem | null;
   recent_grades: StudentAssessment[];
   due: StudentAssessment[];
+  announcements: { id: string; programme_id: string; title: string; body: string; pinned: boolean; created_at: string; programme: { title: string } | null }[];
 };
 
 export default function StudentDashboard() {
@@ -70,6 +71,28 @@ export default function StudentDashboard() {
               </h2>
             )}
           </section>
+
+          {data.announcements.length ? (
+            <section className="mt-10" aria-labelledby="news-title">
+              <h2 id="news-title" className="text-2xl">
+                Latest announcements
+              </h2>
+              <ul className="mt-3 border-t border-line">
+                {data.announcements.map((a) => (
+                  <li key={a.id} className="border-b border-line py-3">
+                    <a href={`/student/programme/?id=${a.programme_id}`} className="font-semibold text-accent-strong hover:underline">
+                      {a.title}
+                    </a>
+                    <span className="block text-sm text-ink-muted">
+                      {a.pinned ? "Pinned · " : ""}
+                      {a.programme?.title} · {formatDateTime(a.created_at)}
+                    </span>
+                    <p className="mt-1 line-clamp-2 max-w-measure text-[0.9375rem]">{a.body}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <div className="mt-10 grid gap-10 lg:grid-cols-2">
             <section aria-labelledby="due-title">

@@ -9,22 +9,39 @@ import { admin } from "../supabase.js";
 const BUCKET = "files";
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-const TYPES: Record<string, string[]> = {
+const DOC_TYPES: Record<string, string[]> = {
   "application/pdf": [".pdf"],
   "application/msword": [".doc"],
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
 };
 
-export const fileMeta = z
-  .object({
-    file_name: z.string().trim().min(1).max(200),
-    content_type: z.string(),
-    size: z.number().int().positive().max(MAX_FILE_BYTES, "Files can be up to 10 MB."),
-  })
-  .refine(
-    (f) => (TYPES[f.content_type] ?? []).some((ext) => f.file_name.toLowerCase().endsWith(ext)),
-    "Upload a PDF or Word document (.pdf, .doc or .docx).",
-  );
+/** Learning materials also allow slides, spreadsheets and images. */
+const MATERIAL_TYPES: Record<string, string[]> = {
+  ...DOC_TYPES,
+  "application/vnd.ms-powerpoint": [".ppt"],
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+  "application/vnd.ms-excel": [".xls"],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+};
+
+const metaFor = (types: Record<string, string[]>, message: string) =>
+  z
+    .object({
+      file_name: z.string().trim().min(1).max(200),
+      content_type: z.string(),
+      size: z.number().int().positive().max(MAX_FILE_BYTES, "Files can be up to 10 MB."),
+    })
+    .refine((f) => (types[f.content_type] ?? []).some((ext) => f.file_name.toLowerCase().endsWith(ext)), message);
+
+/** Assessment briefs and submissions: PDF and Word only. */
+export const fileMeta = metaFor(DOC_TYPES, "Upload a PDF or Word document (.pdf, .doc or .docx).");
+
+export const materialFileMeta = metaFor(
+  MATERIAL_TYPES,
+  "Upload a PDF, Word, PowerPoint or Excel file, or a JPG or PNG image.",
+);
 
 /** Lowercase, safe file name for storage paths. Keeps the extension. */
 function safeName(name: string): string {
@@ -52,5 +69,11 @@ export async function fileExists(path: string): Promise<boolean> {
   return (await signedDownload(path)) !== null;
 }
 
+/** Deletes a stored file. Missing files are ignored. */
+export async function removeFile(path: string): Promise<void> {
+  await admin.storage.from(BUCKET).remove([path]);
+}
+
+export const materialPrefix = (programmeId: string) => `materials/${programmeId}`;
 export const assessmentPrefix = (assessmentId: string) => `assessments/${assessmentId}`;
 export const submissionPrefix = (assessmentId: string, studentId: string) => `submissions/${assessmentId}/${studentId}`;

@@ -2,8 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Announcements } from "@/components/platform/Announcements";
 import { ClassList } from "@/components/platform/ClassList";
 import { Discussion } from "@/components/platform/Discussion";
+import { Materials } from "@/components/platform/Materials";
 import { StudentAssessments } from "@/components/platform/StudentAssessments";
 import { Tabs } from "@/components/platform/Tabs";
 import { Notice, PageTitle } from "@/components/platform/ui";
@@ -17,13 +19,13 @@ type Detail = {
   assessments: StudentAssessment[];
   people: People;
 };
-type Tab = "classes" | "assessments" | "discussion";
+type Tab = "announcements" | "classes" | "materials" | "assessments" | "discussion";
 
 function StudentProgramme() {
   const id = useSearchParams().get("id") ?? "";
   const [data, setData] = useState<Detail | null>(null);
   const [tab, setTab] = useState<Tab>(() =>
-    typeof window !== "undefined" && window.location.hash === "#assessments" ? "assessments" : "classes",
+    typeof window !== "undefined" && window.location.hash === "#assessments" ? "assessments" : "announcements",
   );
   const [error, setError] = useState(id ? "" : "No programme was chosen.");
   const [reloadKey, setReloadKey] = useState(0);
@@ -58,14 +60,18 @@ function StudentProgramme() {
           value={tab}
           onChange={setTab}
           tabs={[
+            { id: "announcements", label: "Announcements" },
             { id: "classes", label: `Classes (${data.classes.length})` },
+            { id: "materials", label: "Materials" },
             { id: "assessments", label: `Assessments (${data.assessments.length})` },
             { id: "discussion", label: "Discussion" },
           ]}
         />
       </div>
       <div className="mt-5">
+        {tab === "announcements" ? <Announcements base="/student" programmeId={id} classes={data.classes} canTeach={false} /> : null}
         {tab === "classes" ? <ClassList classes={data.classes} /> : null}
+        {tab === "materials" ? <Materials base="/student" programmeId={id} canTeach={false} /> : null}
         {tab === "assessments" ? <StudentAssessments items={data.assessments} onChange={() => setReloadKey((k) => k + 1)} /> : null}
         {tab === "discussion" ? <Discussion base="/student" programmeId={id} classId={null} people={data.people} canTeach={false} /> : null}
       </div>

@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Announcements } from "@/components/platform/Announcements";
 import { AssessmentForm } from "@/components/platform/AssessmentForm";
 import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { ClassList } from "@/components/platform/ClassList";
 import { Discussion } from "@/components/platform/Discussion";
+import { Materials } from "@/components/platform/Materials";
 import { Tabs } from "@/components/platform/Tabs";
 import { Button, Notice, PageTitle } from "@/components/platform/ui";
 import { api } from "@/lib/api";
@@ -17,7 +19,7 @@ type Detail = {
   students: { id: string; full_name: string; email: string; status: string; matric_no: string }[];
   assessments: Assessment[];
 };
-type Tab = "classes" | "students" | "assessments" | "discussion";
+type Tab = "classes" | "announcements" | "materials" | "students" | "assessments" | "discussion";
 const accountLabel: Record<string, string> = { invited: "Not activated", active: "Active", suspended: "Suspended" };
 
 function TutorProgramme() {
@@ -51,6 +53,8 @@ function TutorProgramme() {
           }}
           tabs={[
             { id: "classes", label: `Classes (${data.classes.length})` },
+            { id: "announcements", label: "Announcements" },
+            { id: "materials", label: "Materials" },
             { id: "students", label: `Students (${data.students.length})` },
             { id: "assessments", label: `Assessments (${data.assessments.length})` },
             { id: "discussion", label: "Discussion" },
@@ -60,6 +64,8 @@ function TutorProgramme() {
 
       <div className="mt-5">
         {tab === "classes" ? <ClassList classes={data.classes} /> : null}
+        {tab === "announcements" ? <Announcements base="/tutor" programmeId={id} classes={data.classes} canTeach /> : null}
+        {tab === "materials" ? <Materials base="/tutor" programmeId={id} canTeach /> : null}
 
         {tab === "students" ? (
           <div className="relative overflow-x-auto">

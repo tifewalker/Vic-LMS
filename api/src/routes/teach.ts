@@ -6,6 +6,7 @@ import { embed } from "../lib/invites.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
+import { registerContentRoutes } from "./content.js";
 
 /** Tutor routes. Admins can use them too, for any programme. Mounted at /tutor. */
 export const teachRouter = Router();
@@ -317,3 +318,4 @@ teachRouter.post("/assessments/:id/release", async (req, res) => {
 });
 
 registerCommunityRoutes(teachRouter);
+registerContentRoutes(teachRouter);
