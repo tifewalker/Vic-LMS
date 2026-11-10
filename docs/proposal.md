@@ -1,3 +1,5 @@
+> **Terminology note:** this is the client's original proposal and is kept as written. In the product, code and other docs, "learner" is called **student** and "instructor" is called **tutor**. See `docs/scope-v2.md`.
+
 1. INTRODUCTION
 
 Victory Entrepreneurship Centre requires a simple and organised digital platform to manage its training programmes, learners, instructors, learning materials, assignments, assessments and general training activities.

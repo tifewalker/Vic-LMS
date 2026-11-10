@@ -3,20 +3,25 @@
 Project: website and Training Management Platform (LMS) for Victory Entrepreneurship Centre, starting with the public site for the OAUSTECH Entrepreneurship, ICT, Digital Skills and Emerging Technologies Training Programme (26 weeks, Okitipupa, Ondo State).
 
 Read these first:
-- `docs/features.md`: what we are building, roles, data model, build order
-- `docs/proposal.md`: original client proposal
+- `docs/scope-v2.md`: the ten modules, exclusions and roles (student, tutor, admin, super_admin). Supersedes the module list in `features.md`.
+- `docs/infra.md`: Supabase, Cloudflare Workers via OpenNext, R2, Resend, Upstash, env config
+- `docs/auth.md`: auth and user management design (current phase)
+- `docs/features.md`: original feature study, data model draft
+- `docs/proposal.md`: original client proposal (kept as written; uses "learner" and "instructor")
 - `content/landing-copy.md`: approved landing page copy
 
 ## Current phase
 
-**Phase 1: Landing page only.** Do not scaffold the dashboards, auth or database yet. Structure the code so the app can grow into them later (route groups, shared components).
+**Phase 2: Auth and user management.** Build what `docs/auth.md` describes, on the `feat/auth` branch, one commit per step. Phase 1 (the landing page) is done and must keep prerendering as static.
+
+Terminology: use **student** and **tutor** in code, UI and docs, never "learner" or "instructor".
 
 ## Stack
 
 - Next.js (App Router) + TypeScript (strict)
 - Tailwind CSS with design tokens defined once (CSS variables plus Tailwind theme)
 - `next/font` for fonts
-- Later phases: Supabase (Postgres, Auth, Storage, RLS)
+- Supabase (Postgres, Auth, RLS) with the Supabase CLI and migrations; hosting on Cloudflare Workers via OpenNext; R2, Resend, Upstash. See `docs/infra.md`.
 - Package manager: pnpm
 - No UI kit for the landing page. Hand-built components.
 
@@ -24,7 +29,7 @@ Suggested layout:
 ```
 src/app/(marketing)/page.tsx      landing
 src/app/(marketing)/layout.tsx
-src/app/(platform)/...            later: admin, instructor, learner
+src/app/(platform)/...            admin, tutor, student, plus (auth) for login and activation
 src/components/marketing/...      landing sections
 src/components/ui/...             buttons, links, accordion
 src/content/landing.ts            copy as typed data, pulled from content/landing-copy.md
@@ -53,7 +58,7 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - Pill badges above every heading ("✨ New", "Why us")
 - Big rounded-full buttons with arrow icons everywhere
 - Stock "3 columns of features with icons" as the default answer to every section
-- Fake dashboard screenshots, fake stats ("10k+ learners")
+- Fake dashboard screenshots, fake stats ("10k+ students")
 - Lottie or bouncy animations, parallax, cursor effects
 
 ### Do use
