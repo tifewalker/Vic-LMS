@@ -93,14 +93,16 @@ learnRouter.get("/overview", async (req, res) => {
 learnRouter.get("/programmes/:id", async (req, res) => {
   const id = idParam(req.params.id, res);
   if (!id || !(await enrolled(req, res, id))) return;
-  const [{ data: programme }, { data: classes }, { data: tutors }, { data: assessments }] = await Promise.all([
+  const [{ data: programme }, { data: classes }, { data: tutors }, { data: assessments }, people] = await Promise.all([
     admin.from("programmes").select("id, title, description, cover_note").eq("id", id).single(),
     admin.from("classes").select(CLASS_COLUMNS).eq("programme_id", id).order("starts_at"),
     admin.from("programme_tutors").select("tutor:tutors!inner(profile:profiles!inner(full_name))").eq("programme_id", id),
     admin.from("assessments").select(ASSESSMENT_COLUMNS).eq("programme_id", id).eq("published", true).order("due_at", { nullsFirst: false }),
+    programmePeople(id),
   ]);
   res.json({
     programme,
+    people,
     classes: classes ?? [],
     tutors: (tutors ?? []).map((t) => embed<{ full_name: string }>(embed<{ profile: unknown }>(t.tutor).profile).full_name).sort(),
     assessments: await withMine(req.profile!.id, assessments ?? []),

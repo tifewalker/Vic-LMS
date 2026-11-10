@@ -6,17 +6,14 @@ import { Button, inputClass, Notice } from "./ui";
 
 type Candidate = { id: string; full_name: string; email: string; status: string; matric_no?: string; tutor_id?: string };
 
-/**
- * Searchable multi-select of people who can join a batch: students not yet in a batch of this
- * programme, or tutors not yet on this batch.
- */
+/** Searchable multi-select of students or tutors not yet enrolled in a programme. */
 export function PeoplePicker({
-  batchId,
+  programmeId,
   type,
   onDone,
   onCancel,
 }: {
-  batchId: string;
+  programmeId: string;
   type: "students" | "tutors";
   onDone: (message: string) => void;
   onCancel: () => void;
@@ -31,7 +28,7 @@ export function PeoplePicker({
   useEffect(() => {
     let cancelled = false;
     const params = new URLSearchParams({ type, q: search });
-    api<{ candidates: Candidate[] }>(`/admin/batches/${batchId}/candidates?${params}`).then((res) => {
+    api<{ candidates: Candidate[] }>(`/admin/programmes/${programmeId}/candidates?${params}`).then((res) => {
       if (cancelled) return;
       if (res.ok) setCandidates(res.data.candidates);
       else setError(res.error);
@@ -39,7 +36,7 @@ export function PeoplePicker({
     return () => {
       cancelled = true;
     };
-  }, [batchId, type, search]);
+  }, [programmeId, type, search]);
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -52,18 +49,18 @@ export function PeoplePicker({
   async function add() {
     setBusy(true);
     const key = type === "students" ? "student_ids" : "tutor_ids";
-    const res = await api<{ added: number; skipped: number }>(`/admin/batches/${batchId}/${type}`, {
+    const res = await api<{ added: number; skipped: number }>(`/admin/programmes/${programmeId}/${type}`, {
       body: { [key]: [...selected] },
     });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     const noun = type === "students" ? "student" : "tutor";
     onDone(
-      `Added ${res.data.added} ${noun}${res.data.added === 1 ? "" : "s"}.${res.data.skipped ? ` ${res.data.skipped} skipped (already placed).` : ""}`,
+      `Added ${res.data.added} ${noun}${res.data.added === 1 ? "" : "s"}.${res.data.skipped ? ` ${res.data.skipped} skipped.` : ""}`,
     );
   }
 
-  const label = type === "students" ? "Add students" : "Assign tutors";
+  const label = type === "students" ? "Enrol students" : "Assign tutors";
 
   return (
     <section aria-label={label} className="mt-6 border border-line bg-paper p-4 md:p-5">
@@ -76,7 +73,7 @@ export function PeoplePicker({
       >
         <label className="block min-w-0 flex-1 basis-56">
           <span className="block text-sm font-semibold">
-            {type === "students" ? "Search students not yet in a batch for this programme" : "Search tutors"}
+            {type === "students" ? "Search students not yet in this programme" : "Search tutors not yet in this programme"}
           </span>
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} className={`mt-1 ${inputClass}`} />
         </label>

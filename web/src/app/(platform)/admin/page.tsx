@@ -13,8 +13,9 @@ type Summary = {
   suspended: number;
   pendingInvites: number;
   emailsRemainingToday: number;
-  activeBatches: number;
-  studentsWithoutBatch: number;
+  programmes: number;
+  studentsNotEnrolled: number;
+  upcomingClasses: number;
 };
 
 export default function AdminDashboard() {
@@ -27,8 +28,9 @@ export default function AdminDashboard() {
   }, []);
 
   const rows: [string, keyof Summary, string?][] = [
-    ["Active batches", "activeBatches", "/admin/batches/"],
-    ["Students not in a batch", "studentsWithoutBatch"],
+    ["Active programmes", "programmes", "/admin/programmes/"],
+    ["Upcoming classes", "upcomingClasses"],
+    ["Students not in a programme", "studentsNotEnrolled", "/admin/users/?role=student"],
     ["Students", "students", "/admin/users/?role=student"],
     ["Tutors", "tutors", "/admin/users/?role=tutor"],
     ["Not activated", "invited", "/admin/users/?status=invited"],
@@ -55,7 +57,7 @@ export default function AdminDashboard() {
         ))}
       </dl>
       <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-[0.9375rem]">
-        <a href="/admin/batches/" className="font-semibold text-accent-strong hover:underline">Batches</a>
+        <a href="/admin/programmes/" className="font-semibold text-accent-strong hover:underline">Programmes</a>
         <a href="/admin/users/import/" className="font-semibold text-accent-strong hover:underline">Import students</a>
         <a href="/admin/users/tutors/new/" className="font-semibold text-accent-strong hover:underline">Add a tutor</a>
         {me.role === "super_admin" ? (

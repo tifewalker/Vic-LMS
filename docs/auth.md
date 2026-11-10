@@ -37,10 +37,15 @@ Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 ## Web pages
 `/login`, `/activate`, `/forgot-password`, `/reset-password`, `/admin`, `/admin/users`, `/admin/users/import`, `/admin/users/tutors/new`, `/admin/users/admins/new`, `/tutor`, `/student`. A client-side guard checks `/me` and redirects by role; the API enforces access on every request.
 
-## Programmes and batches (feat/batches)
-- Tables: programmes, training_areas, batches, batch_students (one batch per programme per student), batch_tutors. Migration `20261111000000_batches.sql` seeds the OAUSTECH programme and its 8 training areas.
-- RLS: admins read everything; tutors read their batches and the students in them; students read their own batch, its programme and its tutors.
-- Suspend bans the user in Supabase Auth and blocks the API; reactivate lifts the ban and returns them to active (or invited if they never activated). Only a super_admin can change admins.
+## Programmes and classes (feat/batches)
+Migration `20261112000000_programmes_classes.sql` replaced the earlier batch model.
+- **Programme** = one course (8 seeded, one per training area). Students and tutors are enrolled per programme.
+- **Class** = one scheduled session in a programme, with YouTube and recording links. Zoom link and passcode live in `class_tutor_links`, readable only by the programme's tutors and admins, and never returned by `/student` routes.
+- Threads and replies (programme-wide or per class), live Q&A messages, assessments (digital or paper, optional PDF/Word brief), submissions (one per student, resubmit until graded, late after the deadline) and grades (hidden from students until released).
+- RLS: a user reads a programme's rows only if enrolled as a student or tutor, or an admin. Students read only their own submissions and released grades. All writes go through the API.
+- Realtime on `live_messages`, `threads` and `replies`; the web app subscribes directly and RLS applies.
+- Files: private `files` bucket, PDF/DOC/DOCX up to 10 MB, signed upload and download URLs from the API.
+- Suspend bans the user in Supabase Auth and blocks the API; reactivate lifts the ban. Only a super_admin can change admins.
 
 ## Later
 - Daily automatic sending of pending invites (today an admin presses "Send pending invites").

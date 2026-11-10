@@ -13,11 +13,12 @@ type Size = "md" | "sm";
 export function buttonClass(variant: Variant = "primary", className?: string, size: Size = "md") {
   return cx(
     "inline-flex cursor-pointer items-center justify-center rounded-sm font-semibold transition-colors",
-    size === "md" ? "px-4 py-2.5 text-[0.9375rem]" : "px-3 py-1.5 text-sm",
+    // Quiet buttons look like links: no padding. Otherwise padding by size.
+    variant === "quiet" ? "text-[0.9375rem]" : size === "md" ? "px-4 py-2.5 text-[0.9375rem]" : "px-3 py-1.5 text-sm",
     "disabled:cursor-not-allowed disabled:opacity-60",
     variant === "primary" && "bg-accent text-paper hover:bg-accent-strong",
     variant === "secondary" && "border border-line bg-paper text-ink hover:border-ink-muted",
-    variant === "quiet" && "px-0 py-0 text-accent-strong underline decoration-accent/45 underline-offset-[0.22em] hover:decoration-accent-strong",
+    variant === "quiet" && "text-accent-strong underline decoration-accent/45 underline-offset-[0.22em] hover:decoration-accent-strong",
     className,
   );
 }
