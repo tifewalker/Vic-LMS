@@ -4,6 +4,8 @@ import { webOrigins } from "./env.js";
 import { requireAuth } from "./middleware/auth.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter, meHandler } from "./routes/auth.js";
+import { batchesRouter } from "./routes/batches.js";
+import { studentRouter, tutorRouter } from "./routes/members.js";
 
 export const app = express();
 
@@ -16,6 +18,9 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/auth", authRouter);
 app.get("/me", requireAuth, meHandler);
 app.use("/admin", adminRouter);
+app.use("/admin", batchesRouter);
+app.use("/tutor", tutorRouter);
+app.use("/student", studentRouter);
 
 app.use((_req, res) => res.status(404).json({ error: "Not found." }));
 

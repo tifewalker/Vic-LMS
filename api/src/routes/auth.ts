@@ -70,13 +70,13 @@ authRouter.post("/login", byIp(30), loginByIdentifier, async (req, res) => {
 });
 
 /* Invitation tokens */
-type ValidInvite = { id: string; profile_id: string; profile: { full_name: string; email: string } };
+type ValidInvite = { id: string; profile_id: string; profile: { full_name: string; email: string; status: string } };
 
 async function findValidInvite(token: unknown): Promise<ValidInvite | null> {
   if (!looksLikeToken(token)) return null;
   const { data } = await admin
     .from("invitations")
-    .select("id, profile_id, status, expires_at, used_at, profile:profiles!inner(full_name, email)")
+    .select("id, profile_id, status, expires_at, used_at, profile:profiles!inner(full_name, email, status)")
     .eq("token_hash", hashToken(token))
     .maybeSingle();
   if (!data || data.status !== "sent" || data.used_at) return null;
@@ -84,7 +84,9 @@ async function findValidInvite(token: unknown): Promise<ValidInvite | null> {
     await admin.from("invitations").update({ status: "expired" }).eq("id", data.id).eq("status", "sent");
     return null;
   }
-  return { id: data.id, profile_id: data.profile_id, profile: one(data.profile) as ValidInvite["profile"] };
+  const profile = one(data.profile) as ValidInvite["profile"];
+  if (profile.status === "suspended") return null;
+  return { id: data.id, profile_id: data.profile_id, profile };
 }
 
 /* GET /auth/activate/:token */

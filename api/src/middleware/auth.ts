@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+const SUSPENDED = "Your account is suspended. Contact the programme admin.";
+
 /**
  * Verifies the Supabase access token (Bearer) and loads the profile.
  * Suspended users get 403. The role always comes from the database.
@@ -21,6 +23,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   if (!token) return res.status(401).json({ error: "Please sign in." });
 
   const { data, error } = await admin.auth.getUser(token);
+  // Suspended users are banned in Supabase Auth, so their tokens fail here first.
+  if (error?.code === "user_banned") return res.status(403).json({ error: SUSPENDED });
   if (error || !data.user) return res.status(401).json({ error: "Your session has ended. Please sign in again." });
 
   const { data: profile } = await admin
@@ -30,7 +34,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     .maybeSingle();
   if (!profile) return res.status(401).json({ error: "Please sign in." });
   if (profile.status === "suspended") {
-    return res.status(403).json({ error: "Your account is suspended. Contact the programme admin." });
+    return res.status(403).json({ error: SUSPENDED });
   }
 
   req.profile = profile as Profile;

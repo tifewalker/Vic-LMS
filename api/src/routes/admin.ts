@@ -8,6 +8,7 @@ import { one, sendOrQueue, sendPendingInvites } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
+import { addStudentsToBatch } from "./batches.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole("admin", "super_admin"));
@@ -23,7 +24,7 @@ adminRouter.get("/summary", async (_req, res) => {
     const { count } = await q;
     return count ?? 0;
   };
-  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday] = await Promise.all([
+  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, activeBatches, withoutBatch] = await Promise.all([
     count("profiles", ["role", "student"]),
     count("profiles", ["role", "tutor"]),
     count("profiles", ["status", "invited"]),
@@ -31,16 +32,34 @@ adminRouter.get("/summary", async (_req, res) => {
     count("profiles", ["status", "suspended"]),
     count("invitations", ["status", "pending"]),
     emailsRemainingToday(),
+    count("batches", ["status", "active"]),
+    admin.rpc("count_students_without_batch").then((r) => (r.data as number | null) ?? 0),
   ]);
-  res.json({ students, tutors, invited, active, suspended, pendingInvites, emailsRemainingToday: remainingToday });
+  res.json({
+    students,
+    tutors,
+    invited,
+    active,
+    suspended,
+    pendingInvites,
+    emailsRemainingToday: remainingToday,
+    activeBatches,
+    studentsWithoutBatch: withoutBatch,
+  });
 });
 
 /* POST /admin/students/import */
-const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS) });
+const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS), batch_id: z.uuid().optional() });
 
 adminRouter.post("/students/import", importLimiter, async (req, res) => {
   const body = importBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: `Send between 1 and ${MAX_IMPORT_ROWS} rows.` });
+
+  const batchId = body.data.batch_id;
+  if (batchId) {
+    const { data: batch } = await admin.from("batches").select("id").eq("id", batchId).maybeSingle();
+    if (!batch) return res.status(400).json({ error: "That batch no longer exists. Choose another one." });
+  }
 
   const { valid, errors } = validateRows(body.data.rows);
   const [takenEmails, takenMatrics] = await Promise.all([
@@ -50,6 +69,7 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
 
   const skipped: { row: number; reason: string }[] = [];
   let created = 0;
+  const createdIds: string[] = [];
 
   for (const r of valid) {
     if (takenEmails.has(r.email)) {
@@ -61,12 +81,20 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
       continue;
     }
     const result = await createInvitedAccount({ role: "student", ...r });
-    if (result.ok) created++;
-    else skipped.push({ row: r.row, reason: result.reason });
+    if (result.ok) {
+      created++;
+      createdIds.push(result.profileId);
+    } else skipped.push({ row: r.row, reason: result.reason });
+  }
+
+  let batch: { added: number } | null = null;
+  if (batchId && createdIds.length) {
+    const added = await addStudentsToBatch(batchId, createdIds);
+    batch = "error" in added ? { added: 0 } : { added: added.added };
   }
 
   const invites = await sendPendingInvites();
-  res.json({ created, skipped, errors, invites });
+  res.json({ created, skipped, errors, invites, batch });
 });
 
 /* POST /admin/invitations/send-pending */
@@ -179,3 +207,35 @@ adminRouter.get("/users", async (req, res) => {
 
   res.json({ users, total: count ?? 0, page, pageSize: PAGE_SIZE, emailsRemainingToday: await emailsRemainingToday() });
 });
+
+/* POST /admin/users/:id/suspend and /reactivate
+ * Suspending bans the user in Supabase Auth (no new sessions or token refreshes) and the API
+ * rejects their current token through requireAuth. Only a super_admin can change admins. */
+async function changeSuspension(req: import("express").Request, res: import("express").Response, suspend: boolean) {
+  const id = z.uuid().safeParse(req.params.id);
+  if (!id.success) return res.status(404).json({ error: "User not found." });
+  if (id.data === req.profile!.id) return res.status(400).json({ error: "You cannot change your own account here." });
+
+  const { data: target } = await admin
+    .from("profiles")
+    .select("id, role, status, invitations(status)")
+    .eq("id", id.data)
+    .maybeSingle();
+  if (!target) return res.status(404).json({ error: "User not found." });
+  if ((target.role === "admin" || target.role === "super_admin") && req.profile!.role !== "super_admin") {
+    return res.status(403).json({ error: "Only a super admin can suspend or reactivate admins." });
+  }
+
+  // Back to active if they had activated their account, otherwise back to invited.
+  const activated = one(target.invitations as { status: string }[] | null)?.status === "activated" || target.role === "super_admin";
+  const nextStatus = suspend ? "suspended" : activated ? "active" : "invited";
+
+  const { error: banErr } = await admin.auth.admin.updateUserById(id.data, { ban_duration: suspend ? "876000h" : "none" });
+  if (banErr) return res.status(500).json({ error: "Could not update the account. Please try again." });
+  const { error } = await admin.from("profiles").update({ status: nextStatus }).eq("id", id.data);
+  if (error) return res.status(500).json({ error: "Could not update the account. Please try again." });
+  res.json({ id: id.data, status: nextStatus });
+}
+
+adminRouter.post("/users/:id/suspend", (req, res) => changeSuspension(req, res, true));
+adminRouter.post("/users/:id/reactivate", (req, res) => changeSuspension(req, res, false));

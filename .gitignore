@@ -23,3 +23,6 @@ supabase/.temp
 .DS_Store
 *.pem
 npm-debug.log*
+
+# local scratch scripts
+*.tmp.mjs

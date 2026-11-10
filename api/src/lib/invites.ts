@@ -17,20 +17,27 @@ export function one<T>(v: T | T[] | null | undefined): T | null {
   return v ?? null;
 }
 
+/** Typed access to an embedded row whose shape the query guarantees (e.g. an !inner join). */
+export function embed<T>(v: unknown): T {
+  return one(v as T | T[]) as T;
+}
+
 /** Loads what an invite email needs. Returns null for missing or already activated invitations. */
 export async function loadInviteTarget(invitationId: string): Promise<InviteTarget | null> {
   const { data } = await admin
     .from("invitations")
-    .select("id, status, attempts, profile:profiles!inner(full_name, email, students(matric_no), tutors(tutor_id))")
+    .select("id, status, attempts, profile:profiles!inner(full_name, email, status, students(matric_no), tutors(tutor_id))")
     .eq("id", invitationId)
     .maybeSingle();
   if (!data || data.status === "activated") return null;
   const profile = one(data.profile) as unknown as {
     full_name: string;
     email: string;
+    status: string;
     students: unknown;
     tutors: unknown;
   };
+  if (profile.status === "suspended") return null;
   return {
     invitationId: data.id,
     attempts: data.attempts,
