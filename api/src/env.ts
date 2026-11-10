@@ -10,7 +10,8 @@ const schema = z.object({
   SUPABASE_ANON_KEY: z.string().min(20),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   RESEND_API_KEY: z.string().optional().transform((v) => v || undefined),
-  EMAIL_FROM: z.string().min(3),
+  // Only used when RESEND_API_KEY is set. resend.dev only delivers to your own Resend account address.
+  EMAIL_FROM: z.string().min(3).default("Victory Entrepreneurship Centre <onboarding@resend.dev>"),
   EMAIL_DAILY_LIMIT: z.coerce.number().int().min(0).default(90),
 });
 
