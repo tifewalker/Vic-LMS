@@ -1,0 +1,56 @@
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { admin } from "../supabase.js";
+
+/**
+ * Files live in the private "files" bucket. Browsers only ever get short-lived signed URLs.
+ * The bucket also enforces the type and size limits on upload.
+ */
+const BUCKET = "files";
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+const TYPES: Record<string, string[]> = {
+  "application/pdf": [".pdf"],
+  "application/msword": [".doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+};
+
+export const fileMeta = z
+  .object({
+    file_name: z.string().trim().min(1).max(200),
+    content_type: z.string(),
+    size: z.number().int().positive().max(MAX_FILE_BYTES, "Files can be up to 10 MB."),
+  })
+  .refine(
+    (f) => (TYPES[f.content_type] ?? []).some((ext) => f.file_name.toLowerCase().endsWith(ext)),
+    "Upload a PDF or Word document (.pdf, .doc or .docx).",
+  );
+
+/** Lowercase, safe file name for storage paths. Keeps the extension. */
+function safeName(name: string): string {
+  const cleaned = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return cleaned.slice(-80) || "file";
+}
+
+/** A one-time signed upload URL under `prefix/`. The browser uploads with uploadToSignedUrl. */
+export async function signedUpload(prefix: string, fileName: string) {
+  const path = `${prefix}/${randomUUID().slice(0, 8)}-${safeName(fileName)}`;
+  const { data, error } = await admin.storage.from(BUCKET).createSignedUploadUrl(path);
+  if (error || !data) throw error ?? new Error("Could not create an upload URL.");
+  return { path: data.path, token: data.token, signed_url: data.signedUrl };
+}
+
+/** A download URL valid for 5 minutes, or null if the file does not exist. */
+export async function signedDownload(path: string): Promise<string | null> {
+  const name = path.split("/").pop()?.replace(/^[0-9a-f]{8}-/, "") ?? "file";
+  const { data, error } = await admin.storage.from(BUCKET).createSignedUrl(path, 300, { download: name });
+  return error || !data ? null : data.signedUrl;
+}
+
+/** True if a file was actually uploaded at `path`. */
+export async function fileExists(path: string): Promise<boolean> {
+  return (await signedDownload(path)) !== null;
+}
+
+export const assessmentPrefix = (assessmentId: string) => `assessments/${assessmentId}`;
+export const submissionPrefix = (assessmentId: string, studentId: string) => `submissions/${assessmentId}/${studentId}`;

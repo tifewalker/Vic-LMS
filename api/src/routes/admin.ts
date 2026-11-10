@@ -8,7 +8,7 @@ import { one, sendOrQueue, sendPendingInvites } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
-import { addStudentsToBatch } from "./batches.js";
+import { enrolStudents } from "./programmes.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole("admin", "super_admin"));
@@ -24,7 +24,7 @@ adminRouter.get("/summary", async (_req, res) => {
     const { count } = await q;
     return count ?? 0;
   };
-  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, activeBatches, withoutBatch] = await Promise.all([
+  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, programmes, notEnrolled, upcomingClasses] = await Promise.all([
     count("profiles", ["role", "student"]),
     count("profiles", ["role", "tutor"]),
     count("profiles", ["status", "invited"]),
@@ -32,8 +32,13 @@ adminRouter.get("/summary", async (_req, res) => {
     count("profiles", ["status", "suspended"]),
     count("invitations", ["status", "pending"]),
     emailsRemainingToday(),
-    count("batches", ["status", "active"]),
-    admin.rpc("count_students_without_batch").then((r) => (r.data as number | null) ?? 0),
+    count("programmes", ["is_active", "true"]),
+    admin.rpc("count_students_not_enrolled").then((r) => (r.data as number | null) ?? 0),
+    admin
+      .from("classes")
+      .select("*", { count: "exact", head: true })
+      .gte("ends_at", new Date().toISOString())
+      .then((r) => r.count ?? 0),
   ]);
   res.json({
     students,
@@ -43,22 +48,23 @@ adminRouter.get("/summary", async (_req, res) => {
     suspended,
     pendingInvites,
     emailsRemainingToday: remainingToday,
-    activeBatches,
-    studentsWithoutBatch: withoutBatch,
+    programmes,
+    studentsNotEnrolled: notEnrolled,
+    upcomingClasses,
   });
 });
 
 /* POST /admin/students/import */
-const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS), batch_id: z.uuid().optional() });
+const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS), programme_id: z.uuid().optional() });
 
 adminRouter.post("/students/import", importLimiter, async (req, res) => {
   const body = importBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: `Send between 1 and ${MAX_IMPORT_ROWS} rows.` });
 
-  const batchId = body.data.batch_id;
-  if (batchId) {
-    const { data: batch } = await admin.from("batches").select("id").eq("id", batchId).maybeSingle();
-    if (!batch) return res.status(400).json({ error: "That batch no longer exists. Choose another one." });
+  const programmeId = body.data.programme_id;
+  if (programmeId) {
+    const { data: programme } = await admin.from("programmes").select("id").eq("id", programmeId).maybeSingle();
+    if (!programme) return res.status(400).json({ error: "That programme no longer exists. Choose another one." });
   }
 
   const { valid, errors } = validateRows(body.data.rows);
@@ -87,14 +93,14 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     } else skipped.push({ row: r.row, reason: result.reason });
   }
 
-  let batch: { added: number } | null = null;
-  if (batchId && createdIds.length) {
-    const added = await addStudentsToBatch(batchId, createdIds);
-    batch = "error" in added ? { added: 0 } : { added: added.added };
+  let enrolled: { added: number } | null = null;
+  if (programmeId && createdIds.length) {
+    const added = await enrolStudents(programmeId, createdIds);
+    enrolled = "error" in added ? { added: 0 } : { added: added.added };
   }
 
   const invites = await sendPendingInvites();
-  res.json({ created, skipped, errors, invites, batch });
+  res.json({ created, skipped, errors, invites, enrolled });
 });
 
 /* POST /admin/invitations/send-pending */
