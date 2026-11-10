@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Button, Notice, PageTitle } from "@/components/platform/ui";
+import { useEffect, useState } from "react";
+import { Button, inputClass, Notice, PageTitle } from "@/components/platform/ui";
 import { api } from "@/lib/api";
 import { checkSheet, readFile, type PreviewRow } from "@/lib/import-rows";
 import { cx } from "@/lib/cx";
@@ -11,7 +11,10 @@ type ImportResult = {
   skipped: { row: number; reason: string }[];
   errors: { row: number; messages: string[] }[];
   invites: { sent: number; failed: number; stillPending: number };
+  batch: { added: number } | null;
 };
+
+type BatchOption = { id: string; name: string; status: string; programme: { name: string } | null };
 
 export default function ImportPage() {
   const [fileName, setFileName] = useState("");
@@ -19,6 +22,14 @@ export default function ImportPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ data: ImportResult; lines: number[] } | null>(null);
+  const [batches, setBatches] = useState<BatchOption[]>([]);
+  const [batchId, setBatchId] = useState("");
+
+  useEffect(() => {
+    api<{ batches: BatchOption[] }>("/admin/batches").then((res) => {
+      if (res.ok) setBatches(res.data.batches.filter((b) => b.status !== "completed"));
+    });
+  }, []);
 
   const valid = rows?.filter((r) => r.problems.length === 0) ?? [];
   const invalid = rows ? rows.length - valid.length : 0;
@@ -41,7 +52,7 @@ export default function ImportPage() {
     setBusy(true);
     setError("");
     const send = valid.map(({ matric_no, full_name, email }) => ({ matric_no, full_name, email }));
-    const res = await api<ImportResult>("/admin/students/import", { body: { rows: send } });
+    const res = await api<ImportResult>("/admin/students/import", { body: { rows: send, ...(batchId ? { batch_id: batchId } : {}) } });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     // The API numbers rows from 1 in the order sent; map back to file line numbers.
@@ -70,6 +81,23 @@ export default function ImportPage() {
             onChange={onFile}
             className="mt-1.5 block w-full text-[0.9375rem] file:mr-4 file:cursor-pointer file:rounded-sm file:border file:border-line file:bg-paper file:px-4 file:py-2 file:font-semibold file:text-ink"
           />
+        </label>
+        <label className="block max-w-md">
+          <span className="block text-[0.9375rem] font-semibold">Add to batch (optional)</span>
+          <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className={`mt-1.5 ${inputClass}`}>
+            <option value="">No batch for now</option>
+            {[...new Set(batches.map((b) => b.programme?.name ?? "Other"))].map((programme) => (
+              <optgroup key={programme} label={programme}>
+                {batches
+                  .filter((b) => (b.programme?.name ?? "Other") === programme)
+                  .map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
         </label>
         {error ? <Notice tone="error">{error}</Notice> : null}
       </div>
@@ -126,6 +154,7 @@ export default function ImportPage() {
           <Notice tone="success">
             Created {result.data.created} student{result.data.created === 1 ? "" : "s"}. Sent {result.data.invites.sent} invite
             {result.data.invites.sent === 1 ? "" : "s"}.
+            {result.data.batch ? ` Added ${result.data.batch.added} to the batch.` : ""}
             {result.data.invites.stillPending
               ? ` ${result.data.invites.stillPending} invites are waiting for tomorrow's email allowance; use Send pending invites on the Users page.`
               : ""}

@@ -7,11 +7,13 @@ import { passwordRules } from "@/lib/password";
 /** Plain controls for the platform screens, on the CLAUDE.md palette. */
 
 type Variant = "primary" | "secondary" | "quiet";
+type Size = "md" | "sm";
 
-/** Button styles, also used for links that look like buttons. */
-export function buttonClass(variant: Variant = "primary", className?: string) {
+/** Button styles, also used for links that look like buttons. Square-ish corners, no icons. */
+export function buttonClass(variant: Variant = "primary", className?: string, size: Size = "md") {
   return cx(
-    "inline-flex cursor-pointer items-center justify-center rounded-sm px-4 py-2.5 text-[0.9375rem] font-semibold transition-colors",
+    "inline-flex cursor-pointer items-center justify-center rounded-sm font-semibold transition-colors",
+    size === "md" ? "px-4 py-2.5 text-[0.9375rem]" : "px-3 py-1.5 text-sm",
     "disabled:cursor-not-allowed disabled:opacity-60",
     variant === "primary" && "bg-accent text-paper hover:bg-accent-strong",
     variant === "secondary" && "border border-line bg-paper text-ink hover:border-ink-muted",
@@ -22,11 +24,15 @@ export function buttonClass(variant: Variant = "primary", className?: string) {
 
 export function Button({
   variant = "primary",
+  size = "md",
   className,
   ...rest
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
-  return <button {...rest} className={buttonClass(variant, className)} />;
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
+  return <button type="button" {...rest} className={buttonClass(variant, className, size)} />;
 }
+
+/** Shared look for inputs and selects outside Field. */
+export const inputClass = "block w-full rounded-sm border border-line bg-white px-3 py-2 text-base text-ink";
 
 export function Field({
   label,

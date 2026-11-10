@@ -37,6 +37,10 @@ Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 ## Web pages
 `/login`, `/activate`, `/forgot-password`, `/reset-password`, `/admin`, `/admin/users`, `/admin/users/import`, `/admin/users/tutors/new`, `/admin/users/admins/new`, `/tutor`, `/student`. A client-side guard checks `/me` and redirects by role; the API enforces access on every request.
 
+## Programmes and batches (feat/batches)
+- Tables: programmes, training_areas, batches, batch_students (one batch per programme per student), batch_tutors. Migration `20261111000000_batches.sql` seeds the OAUSTECH programme and its 8 training areas.
+- RLS: admins read everything; tutors read their batches and the students in them; students read their own batch, its programme and its tutors.
+- Suspend bans the user in Supabase Auth and blocks the API; reactivate lifts the ban and returns them to active (or invited if they never activated). Only a super_admin can change admins.
+
 ## Later
-- Suspend and reactivate actions (status exists; no endpoint yet).
 - Daily automatic sending of pending invites (today an admin presses "Send pending invites").

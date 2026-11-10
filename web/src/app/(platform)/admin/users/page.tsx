@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ConfirmButton } from "@/components/platform/ConfirmButton";
 import { useMe } from "@/components/platform/RequireRole";
 import { Button, buttonClass, Notice, PageTitle } from "@/components/platform/ui";
 import { api } from "@/lib/api";
@@ -82,6 +83,12 @@ export default function UsersPage() {
     const res = await api<{ message: string }>(`/admin/invitations/${invitationId}/resend`, { method: "POST" });
     setBusy(null);
     setNotice(res.ok ? res.data.message : res.error);
+    load();
+  }
+
+  async function setSuspended(u: User, suspend: boolean) {
+    const res = await api<{ status: string }>(`/admin/users/${u.id}/${suspend ? "suspend" : "reactivate"}`, { method: "POST" });
+    setNotice(res.ok ? `${u.full_name} ${suspend ? "is suspended and cannot sign in." : "is reactivated."}` : res.error);
     load();
   }
 
@@ -231,11 +238,28 @@ export default function UsersPage() {
                   )}
                 </td>
                 <td className="py-3 text-right">
-                  {u.invitation && u.invitation.status !== "activated" ? (
-                    <Button variant="quiet" onClick={() => resend(u.invitation!.id)} disabled={busy === u.invitation.id}>
-                      {busy === u.invitation.id ? "Sending…" : "Resend invite"}
-                    </Button>
-                  ) : null}
+                  <div className="flex flex-col items-end gap-2">
+                    {u.invitation && u.invitation.status !== "activated" && u.status !== "suspended" ? (
+                      <Button variant="quiet" onClick={() => resend(u.invitation!.id)} disabled={busy === u.invitation.id}>
+                        {busy === u.invitation.id ? "Sending…" : "Resend invite"}
+                      </Button>
+                    ) : null}
+                    {u.id === me.id || (u.role !== "student" && u.role !== "tutor" && me.role !== "super_admin") ? null : u.status === "suspended" ? (
+                      <ConfirmButton
+                        label="Reactivate"
+                        question={`Let ${u.full_name.split(" ")[0]} sign in again?`}
+                        confirmLabel="Reactivate"
+                        onConfirm={() => setSuspended(u, false)}
+                      />
+                    ) : (
+                      <ConfirmButton
+                        label="Suspend"
+                        question={`Suspend ${u.full_name.split(" ")[0]}? They will be signed out.`}
+                        confirmLabel="Suspend"
+                        onConfirm={() => setSuspended(u, true)}
+                      />
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

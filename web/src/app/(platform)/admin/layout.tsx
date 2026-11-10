@@ -5,9 +5,10 @@ import { RequireRole } from "@/components/platform/RequireRole";
 
 const nav = [
   { href: "/admin/", label: "Dashboard" },
+  { href: "/admin/batches/", label: "Batches" },
+  { href: "/admin/programmes/", label: "Programmes" },
   { href: "/admin/users/", label: "Users" },
   { href: "/admin/users/import/", label: "Import students" },
-  { href: "/admin/users/tutors/new/", label: "Add tutor" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
