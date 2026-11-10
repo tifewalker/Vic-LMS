@@ -1,32 +1,27 @@
-# Infrastructure
+# Infrastructure (free tier only)
 
-## Database, auth and RLS: Supabase
-- Local development with the Supabase CLI.
-- Every schema change is a migration in `supabase/migrations`. Never edit the remote schema by hand.
+Decided 2026-11-10. No paid services. Cloudflare Workers, R2, Upstash, Cron Triggers and Playwright are out for now.
 
-## Hosting: Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`)
-- Remove `output: "export"` and `images.unoptimized` from the landing page setup. The landing page must still prerender as static.
-- Check that the Next.js 16 proxy file (formerly middleware) works under OpenNext. If it does not, protect routes with server-side checks in the `(platform)` layouts instead, and report it.
-- After building, report the compressed Worker size. If it is over 3 MiB, report it. Do not hack around it.
+## Layout: pnpm monorepo
+- `web/`: the Next.js site. `output: "export"`, served free as a **Render Static Site**. Every app page is client-side and talks to the API. Holds only public config (API URL, Supabase URL and anon key). Never the service role key.
+- `api/`: Node + TypeScript + Express, a free **Render Web Service**. Holds the Supabase service role key and does all privileged work.
 
-## File storage: Cloudflare R2
-- Materials and submissions, uploaded with presigned URLs.
-- Postgres stores only the file keys.
+## Database and auth: Supabase (free)
+- SQL migrations in `api/supabase/migrations`. Never edit the remote schema by hand.
+- Public sign-ups off (also set this in the hosted project: Authentication > Sign In / Providers).
+- RLS on every table; users read their own rows, admins read everything. All writes go through the API with the service role.
 
-## Email: Resend
-- Our own templates (React Email), sent through our own email layer for every email (invites and password resets).
-- Supabase's email templates and SMTP are not used. Every send is logged in `email_log` and counted against `EMAIL_DAILY_LIMIT`.
-- Local development sends to Mailpit over SMTP; that transport is kept out of the Worker bundle.
+## Email: Resend (free, 100 a day)
+- Sent from the API through one module with our own templates. Every send is logged in `email_log` and counted against `EMAIL_DAILY_LIMIT` (default 90).
+- Locally, without `RESEND_API_KEY`, emails are printed to the API console.
+- Resend only delivers to other people from a verified domain.
 
-## Rate limiting: Upstash Redis
-- Login, invite resend and bulk upload endpoints.
+## Rate limiting
+- `express-rate-limit`, in memory, on login, activation and forgot password.
 
 ## Config
-- Environment variables only, loaded through a typed env loader (zod), with a `.env.example`.
-- The Supabase service role key is only ever used on the server.
+- One `.env.example` per app, checked with zod at start-up (API) or first use (web).
 
-## Workers plan
-- Building on **Workers Free**: 10 ms CPU per request, 50 outbound calls per request, 3 MiB compressed Worker.
-- Designs that respect this: browser-side file parsing, import in chunks of 20 rows.
-- If a limit does not fit, report the measured numbers; the client will move to Workers Paid ($5/month) rather than accept worse code.
-- The Cron Trigger runs from a custom Worker entry alongside the OpenNext handler.
+## Free tier notes
+- A free Render Web Service sleeps after 15 minutes idle; the first request after that takes about a minute.
+- In-memory rate limits reset when the API restarts or sleeps.

@@ -4,7 +4,7 @@ Project: website and Training Management Platform (LMS) for Victory Entrepreneur
 
 Read these first:
 - `docs/scope-v2.md`: the ten modules, exclusions and roles (student, tutor, admin, super_admin). Supersedes the module list in `features.md`.
-- `docs/infra.md`: Supabase, Cloudflare Workers via OpenNext, R2, Resend, Upstash, env config
+- `docs/infra.md`: free-tier setup: `web/` (Next.js static export on Render) + `api/` (Express on Render), Supabase, Resend
 - `docs/auth.md`: auth and user management design (current phase)
 - `docs/features.md`: original feature study, data model draft
 - `docs/proposal.md`: original client proposal (kept as written; uses "learner" and "instructor")
@@ -12,7 +12,7 @@ Read these first:
 
 ## Current phase
 
-**Phase 2: Auth and user management.** Build what `docs/auth.md` describes, on the `feat/auth` branch, one commit per step. Phase 1 (the landing page) is done and must keep prerendering as static.
+**Phase 2: Auth and user management** (`docs/auth.md`), on the `feat/auth` branch. Free services only. Phase 1 (the landing page) is done and must keep prerendering as static.
 
 Terminology: use **student** and **tutor** in code, UI and docs, never "learner" or "instructor".
 
@@ -21,19 +21,21 @@ Terminology: use **student** and **tutor** in code, UI and docs, never "learner"
 - Next.js (App Router) + TypeScript (strict)
 - Tailwind CSS with design tokens defined once (CSS variables plus Tailwind theme)
 - `next/font` for fonts
-- Supabase (Postgres, Auth, RLS) with the Supabase CLI and migrations; hosting on Cloudflare Workers via OpenNext; R2, Resend, Upstash. See `docs/infra.md`.
+- pnpm monorepo: `web/` (this Next.js site, `output: "export"`) and `api/` (Express + TypeScript). Supabase (Postgres, Auth, RLS) with migrations in `api/supabase/migrations`; Resend for email. See `docs/infra.md`.
+- The web app never holds the Supabase service role key; privileged work goes through the API.
 - Package manager: pnpm
 - No UI kit for the landing page. Hand-built components.
 
 Suggested layout:
 ```
-src/app/(marketing)/page.tsx      landing
-src/app/(marketing)/layout.tsx
-src/app/(platform)/...            admin, tutor, student, plus (auth) for login and activation
-src/components/marketing/...      landing sections
-src/components/ui/...             buttons, links, accordion
-src/content/landing.ts            copy as typed data, pulled from content/landing-copy.md
-src/lib/site.ts                   phone, form link, address, urls
+web/src/app/(marketing)/page.tsx      landing
+web/src/app/(marketing)/layout.tsx
+web/src/app/(platform)/...            admin, tutor, student, plus (auth) for login and activation
+api/src/...                           Express API
+web/src/components/marketing/...      landing sections
+web/src/components/ui/...             buttons, links, accordion
+web/src/content/landing.ts            copy as typed data, pulled from content/landing-copy.md
+web/src/lib/site.ts                   phone, form link, address, urls
 ```
 
 ## Content rules
@@ -44,7 +46,7 @@ src/lib/site.ts                   phone, form link, address, urls
 - No emoji in the UI.
 - Keep the British spelling used in the copy (programme, organise, visualisation).
 - Items the copy marks "to be confirmed" (dates, fees, certificates) must not be shown as facts. Hide them or show "Details to be announced".
-- Phone: +234 703 203 8565 (make it a `tel:` link). Application form: https://forms.gle/DKMJPQvVLbwWSsbeA (keep in `src/lib/site.ts` so we can swap it for our own form later).
+- Phone: +234 703 203 8565 (make it a `tel:` link). Application form: https://forms.gle/DKMJPQvVLbwWSsbeA (keep in `web/src/lib/site.ts` so we can swap it for our own form later).
 
 ## Design direction: sweet and neutral, not "AI template"
 
@@ -97,14 +99,14 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - There is no Victory Entrepreneurship Centre logo yet. Set the name in the heading serif as a wordmark and keep a `TODO(content):` for the real logo until the client supplies one.
 
 ### Images: real OAUSTECH images, self-hosted
-- Use real images from the OAUSTECH website, downloaded into `public/images/` and served with `next/image`. Never hotlink.
-  - Logo: https://oaustech.edu.ng/images/logo.png to `public/images/oaustech-logo.png`
-  - Campus photo: https://oaustech.edu.ng/cache/resized/0930ca64ead13e2113232a6df145a9c7.jpg to `public/images/oaustech-campus.jpg` (used in the hero)
-  - Auditorium: https://oaustech.edu.ng/cache/resized/e5032fe998fcdad7d034560cc740340a.jpg to `public/images/oaustech-auditorium.jpg` (About)
-  - Library: https://oaustech.edu.ng/cache/resized/25409442948fc7b1a29bf29244f3c3f6.jpg to `public/images/oaustech-library.jpg` (Why OAUSTECH)
+- Use real images from the OAUSTECH website, downloaded into `web/public/images/` and served with `next/image`. Never hotlink.
+  - Logo: https://oaustech.edu.ng/images/logo.png to `web/public/images/oaustech-logo.png`
+  - Campus photo: https://oaustech.edu.ng/cache/resized/0930ca64ead13e2113232a6df145a9c7.jpg to `web/public/images/oaustech-campus.jpg` (used in the hero)
+  - Auditorium: https://oaustech.edu.ng/cache/resized/e5032fe998fcdad7d034560cc740340a.jpg to `web/public/images/oaustech-auditorium.jpg` (About)
+  - Library: https://oaustech.edu.ng/cache/resized/25409442948fc7b1a29bf29244f3c3f6.jpg to `web/public/images/oaustech-library.jpg` (Why OAUSTECH)
 - If a download fails, use a neutral placeholder captioned "Campus photo" and report it. Never substitute stock photos or AI images.
 - Write proper, descriptive alt text. No em dashes in alt text.
-- The About and Why OAUSTECH sections have image slots that work with or without a photo. More client photos may be added later; register them in one place (`src/content/images.ts`) rather than hard-coding paths in components.
+- The About and Why OAUSTECH sections have image slots that work with or without a photo. More client photos may be added later; register them in one place (`web/src/content/images.ts`) rather than hard-coding paths in components.
 
 ## Quality bar
 
