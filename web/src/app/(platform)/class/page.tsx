@@ -10,25 +10,34 @@ import { LiveQA } from "@/components/platform/LiveQA";
 import { Materials } from "@/components/platform/Materials";
 import { useMe } from "@/components/platform/RequireRole";
 import { StudentAssessments } from "@/components/platform/StudentAssessments";
-import { ClassStatus, Tabs } from "@/components/platform/Tabs";
-import { Button, buttonClass, Field, Notice, PageTitle } from "@/components/platform/ui";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { controlClass, TextField } from "@/components/ui/Field";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SkeletonPage } from "@/components/ui/Skeleton";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { Tabs } from "@/components/ui/Tabs";
+import { useToast } from "@/components/ui/Toast";
 import { api, homeFor } from "@/lib/api";
-import { formatDateTime, formatTimeRange } from "@/lib/dates";
+import { cx } from "@/lib/cx";
+import { formatClassTime } from "@/lib/dates";
 import type { Assessment, ClassItem, People, StudentAssessment } from "@/lib/types";
 
 type Data = { class: ClassItem; people: People; assessments: (Assessment | StudentAssessment)[]; can_teach: boolean };
 type Tab = "overview" | "live" | "discussion" | "announcements" | "materials" | "assessments" | "recording";
 
+const joinClass = "h-12 px-6 text-ui-md";
+
 function ClassPage() {
   const me = useMe();
+  const toast = useToast();
   const id = useSearchParams().get("id") ?? "";
   const isStudent = me.role === "student";
   const base = isStudent ? "/student" : "/tutor";
   const [data, setData] = useState<Data | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [error, setError] = useState(id ? "" : "No class was chosen.");
-  const [notice, setNotice] = useState("");
-  const [copied, setCopied] = useState(false);
   const [manualLink, setManualLink] = useState("");
   const [creating, setCreating] = useState(false);
   const [recording, setRecording] = useState("");
@@ -46,18 +55,9 @@ function ClassPage() {
   }, [base, id, reloadKey]);
 
   if (error && !data) {
-    return (
-      <>
-        <Notice tone="error">{error}</Notice>
-        <p className="mt-6">
-          <a href={homeFor(me.role)} className="text-accent-strong hover:underline">
-            Back to your dashboard
-          </a>
-        </p>
-      </>
-    );
+    return <EmptyState title="Class not available." text={error} action={<ButtonLink href={homeFor(me.role)} variant="secondary">Back to your dashboard</ButtonLink>} />;
   }
-  if (!data) return <p className="text-ink-muted">Loading…</p>;
+  if (!data) return <SkeletonPage />;
   const c = data.class;
   const teach = data.can_teach;
 
@@ -65,8 +65,7 @@ function ClassPage() {
     const link = `${window.location.origin}/class/?id=${c.id}`;
     try {
       await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      toast("Class link copied.");
     } catch {
       // Some browsers block the clipboard; show the link so it can be copied by hand.
       setManualLink(link);
@@ -74,42 +73,63 @@ function ClassPage() {
   }
   async function setStatus(status: ClassItem["status"]) {
     const res = await api(`/tutor/classes/${c.id}`, { method: "PATCH", body: { status } });
-    setNotice(res.ok ? (status === "live" ? "The class is marked live." : "The class is marked ended.") : res.error);
+    toast(res.ok ? (status === "live" ? "The class is marked live." : "The class is marked ended.") : res.error, res.ok ? "success" : "error");
     reload();
   }
   async function saveRecording(e: React.FormEvent) {
     e.preventDefault();
     const res = await api(`/tutor/classes/${c.id}`, { method: "PATCH", body: { recording_url: recording } });
-    setNotice(res.ok ? "Recording link saved." : res.error);
+    toast(res.ok ? "Recording link saved." : res.error, res.ok ? "success" : "error");
     reload();
   }
 
+  // The main action at the top: YouTube for students, Zoom for tutors and admins.
+  const join = teach ? (
+    c.zoom_url ? (
+      <ButtonLink href={c.zoom_url} external className={joinClass}>
+        Join on Zoom
+      </ButtonLink>
+    ) : null
+  ) : c.youtube_url ? (
+    <ButtonLink href={c.youtube_url} external className={joinClass}>
+      Join on YouTube
+    </ButtonLink>
+  ) : null;
+
   return (
     <>
-      <PageTitle kicker={c.programme?.title} title={c.title}>
-        <Button variant="secondary" onClick={copyLink}>
-          {copied ? "Link copied" : "Copy class link"}
-        </Button>
-      </PageTitle>
-      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-ink-muted">
-        <span>
-          {formatDateTime(c.starts_at)}, {formatTimeRange(c.starts_at, c.ends_at)}
-        </span>
-        <ClassStatus status={c.status} />
-      </p>
+      <PageHeader
+        kicker={c.programme?.title}
+        title={c.title}
+        meta={
+          <>
+            <span className="text-ink">{formatClassTime(c.starts_at, c.ends_at)}</span>
+            <StatusLabel status={c.status} />
+          </>
+        }
+        actions={
+          <>
+            <Button variant="secondary" onClick={copyLink}>
+              Copy class link
+            </Button>
+            {join}
+          </>
+        }
+      />
+      {manualLink ? (
+        <label className="mt-4 block max-w-xl">
+          <span className="block text-ui-sm font-semibold">Copy this link</span>
+          <input readOnly value={manualLink} onFocus={(e) => e.target.select()} autoFocus className={cx(controlClass, "mt-2 h-11")} />
+        </label>
+      ) : null}
+      {teach && c.zoom_passcode ? (
+        <p className="mt-4 text-ui-sm">
+          Zoom passcode: <span className="font-semibold tabular-nums">{c.zoom_passcode}</span>
+          <span className="text-ink-muted"> · Only tutors and admins see the Zoom details.</span>
+        </p>
+      ) : null}
 
-      <div className="mt-6 space-y-3">
-        {manualLink ? (
-          <label className="block max-w-xl">
-            <span className="block text-sm font-semibold">Copy this link</span>
-            <input readOnly value={manualLink} onFocus={(e) => e.target.select()} autoFocus className="mt-1 block w-full rounded-sm border border-line bg-white px-3 py-2 text-base" />
-          </label>
-        ) : null}
-        {notice ? <Notice>{notice}</Notice> : null}
-        {error ? <Notice tone="error">{error}</Notice> : null}
-      </div>
-
-      <div className="mt-8">
+      <div className="mt-6">
         <Tabs
           label="Class sections"
           value={tab}
@@ -120,81 +140,52 @@ function ClassPage() {
             { id: "discussion", label: "Discussion" },
             { id: "announcements", label: "Announcements" },
             { id: "materials", label: "Materials" },
-            { id: "assessments", label: `Assessments (${data.assessments.length})` },
+            { id: "assessments", label: "Assessments", count: data.assessments.length },
             { id: "recording", label: "Recording" },
           ]}
         />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-8">
         {tab === "overview" ? (
-          <section aria-label="Overview" className="max-w-2xl space-y-6">
-            {c.description ? <p className="whitespace-pre-wrap">{c.description}</p> : null}
+          <section aria-label="Overview" className="max-w-measure space-y-6">
+            {c.description ? <p className="whitespace-pre-wrap">{c.description}</p> : <p className="text-ink-muted">No description for this class.</p>}
+            {!join ? (
+              <Notice>{teach ? "No Zoom link yet. The programme admin adds it in the class settings." : "The YouTube link will appear here before the class starts."}</Notice>
+            ) : null}
             {teach ? (
-              <div className="space-y-4">
-                {c.zoom_url ? (
-                  <>
-                    <a href={c.zoom_url} target="_blank" rel="noopener noreferrer" className={buttonClass()}>
-                      Join on Zoom
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                    {c.zoom_passcode ? (
-                      <p>
-                        Passcode: <span className="font-semibold tabular-nums">{c.zoom_passcode}</span>
-                      </p>
-                    ) : null}
-                    <p className="text-sm text-ink-muted">Only tutors and admins see the Zoom details. Students watch on YouTube.</p>
-                  </>
-                ) : (
-                  <p className="text-ink-muted">No Zoom link yet. The programme admin adds it on the class settings.</p>
-                )}
-                <div className="flex flex-wrap gap-3 border-t border-line pt-4">
-                  {c.status !== "live" ? (
-                    <Button size="sm" variant="secondary" onClick={() => setStatus("live")}>
-                      Mark as live
-                    </Button>
-                  ) : null}
-                  {c.status !== "ended" ? (
-                    <Button size="sm" variant="secondary" onClick={() => setStatus("ended")}>
-                      Mark as ended
-                    </Button>
-                  ) : null}
-                  {me.role === "admin" || me.role === "super_admin" ? (
-                    <a href={`/admin/classes/edit/?id=${c.id}`} className={buttonClass("secondary", undefined, "sm")}>
-                      Class settings
-                    </a>
-                  ) : null}
-                </div>
+              <div className="flex flex-wrap gap-3 border-t border-line pt-6">
+                {c.status !== "live" ? (
+                  <Button size="sm" variant="secondary" onClick={() => setStatus("live")}>
+                    Mark as live
+                  </Button>
+                ) : null}
+                {c.status !== "ended" ? (
+                  <Button size="sm" variant="secondary" onClick={() => setStatus("ended")}>
+                    Mark as ended
+                  </Button>
+                ) : null}
+                {me.role === "admin" || me.role === "super_admin" ? (
+                  <ButtonLink href={`/admin/classes/edit/?id=${c.id}`} variant="secondary" size="sm">
+                    Class settings
+                  </ButtonLink>
+                ) : null}
               </div>
-            ) : c.youtube_url ? (
-              <a href={c.youtube_url} target="_blank" rel="noopener noreferrer" className={buttonClass()}>
-                Join on YouTube
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
-            ) : (
-              <p className="text-ink-muted">The YouTube link will appear here before the class starts.</p>
-            )}
+            ) : null}
           </section>
         ) : null}
 
         {tab === "live" ? <LiveQA base={base} classId={c.id} people={data.people} canTeach={teach} /> : null}
-
         {tab === "discussion" ? <Discussion base={base} programmeId={c.programme_id} classId={c.id} people={data.people} canTeach={teach} /> : null}
-
         {tab === "announcements" ? <Announcements base={base} programmeId={c.programme_id} classId={c.id} canTeach={teach} /> : null}
-
         {tab === "materials" ? <Materials base={base} programmeId={c.programme_id} classId={c.id} canTeach={teach} /> : null}
 
         {tab === "assessments" ? (
           isStudent ? (
             <StudentAssessments items={data.assessments as StudentAssessment[]} onChange={reload} />
           ) : (
-            <>
-              {!creating ? (
-                <Button size="sm" onClick={() => setCreating(true)}>
-                  New assessment for this class
-                </Button>
-              ) : (
+            <div className="space-y-6">
+              {creating ? (
                 <AssessmentForm
                   programmeId={c.programme_id}
                   classes={[c]}
@@ -202,29 +193,32 @@ function ClassPage() {
                   onCancel={() => setCreating(false)}
                   onCreated={() => {
                     setCreating(false);
-                    setNotice("Assessment created.");
+                    toast("Assessment created.");
                     reload();
                   }}
                 />
-              )}
-              <AssessmentTable items={data.assessments as Assessment[]} classes={[c]} />
-            </>
+              ) : data.assessments.length ? (
+                <Button size="sm" onClick={() => setCreating(true)}>
+                  New assessment for this class
+                </Button>
+              ) : null}
+              <AssessmentTable items={data.assessments as Assessment[]} classes={[c]} emptyAction={creating ? undefined : <Button onClick={() => setCreating(true)}>New assessment</Button>} />
+            </div>
           )
         ) : null}
 
         {tab === "recording" ? (
-          <section aria-label="Recording" className="max-w-2xl space-y-5">
+          <section aria-label="Recording" className="max-w-2xl space-y-6">
             {c.recording_url ? (
-              <a href={c.recording_url} target="_blank" rel="noopener noreferrer" className={buttonClass()}>
+              <ButtonLink href={c.recording_url} external className={joinClass}>
                 Watch the recording
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
+              </ButtonLink>
             ) : (
-              <p className="text-ink-muted">The recording will appear here after the class.</p>
+              <EmptyState title="No recording yet." text="The recording will appear here after the class." />
             )}
             {teach ? (
-              <form onSubmit={saveRecording} className="space-y-3 border-t border-line pt-5">
-                <Field label="Recording link" type="url" placeholder="https://www.youtube.com/…" value={recording} onChange={(e) => setRecording(e.target.value)} />
+              <form onSubmit={saveRecording} className="space-y-4 border-t border-line pt-6">
+                <TextField label="Recording link" type="url" placeholder="https://www.youtube.com/…" value={recording} onChange={(e) => setRecording(e.target.value)} />
                 <Button type="submit" size="sm">
                   Save recording link
                 </Button>
@@ -239,7 +233,7 @@ function ClassPage() {
 
 export default function ClassRoute() {
   return (
-    <Suspense>
+    <Suspense fallback={<SkeletonPage />}>
       <ClassPage />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusLabel } from "@/components/ui/StatusLabel";
@@ -20,12 +21,13 @@ export function ClassList({
   emptyAction?: React.ReactNode;
   emptyText?: string;
 }) {
+  const router = useRouter();
   return (
     <DataTable
       caption="Classes"
       rows={classes}
       rowKey={(c) => c.id}
-      onRowClick={(c) => window.location.assign(`/class/?id=${c.id}`)}
+      onRowClick={(c) => router.push(`/class/?id=${c.id}`)}
       empty={<EmptyState title="No classes yet." text={emptyText} action={emptyAction} />}
       columns={[
         {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -26,6 +27,7 @@ const blank: Draft = { title: "", description: "", cover_note: "", is_active: tr
 
 export default function ProgrammesPage() {
   const toast = useToast();
+  const router = useRouter();
   const [programmes, setProgrammes] = useState<Programme[] | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState("");
@@ -92,7 +94,7 @@ export default function ProgrammesPage() {
           caption="Programmes"
           rows={programmes}
           rowKey={(p) => p.id}
-          onRowClick={(p) => window.location.assign(`/admin/programmes/view/?id=${p.id}`)}
+          onRowClick={(p) => router.push(`/admin/programmes/view/?id=${p.id}`)}
           empty={<EmptyState title="No programmes yet." text="Create a programme to start scheduling classes." action={<Button onClick={() => setDraft(blank)}>New programme</Button>} />}
           columns={[
             {

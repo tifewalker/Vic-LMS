@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusLabel } from "@/components/ui/StatusLabel";
@@ -8,13 +9,14 @@ import type { Assessment, ClassItem } from "@/lib/types";
 
 /** Assessments for a programme; each row opens the submissions and grading page. */
 export function AssessmentTable({ items, classes, emptyAction }: { items: Assessment[] | null; classes: ClassItem[]; emptyAction?: React.ReactNode }) {
+  const router = useRouter();
   const classTitle = (cid: string | null) => (cid ? (classes.find((c) => c.id === cid)?.title ?? "A class") : "Whole programme");
   return (
     <DataTable
       caption="Assessments"
       rows={items}
       rowKey={(a) => a.id}
-      onRowClick={(a) => window.location.assign(`/tutor/assessment/?id=${a.id}`)}
+      onRowClick={(a) => router.push(`/tutor/assessment/?id=${a.id}`)}
       empty={<EmptyState title="No assessments yet." text="Create one for a class or for the whole programme." action={emptyAction} />}
       columns={[
         {

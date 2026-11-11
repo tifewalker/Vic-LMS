@@ -7,8 +7,10 @@ import { ClassList } from "@/components/platform/ClassList";
 import { Discussion } from "@/components/platform/Discussion";
 import { Materials } from "@/components/platform/Materials";
 import { StudentAssessments } from "@/components/platform/StudentAssessments";
-import { Tabs } from "@/components/platform/Tabs";
-import { Notice, PageTitle } from "@/components/platform/ui";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SkeletonPage } from "@/components/ui/Skeleton";
+import { Tabs } from "@/components/ui/Tabs";
 import { api } from "@/lib/api";
 import type { ClassItem, People, StudentAssessment } from "@/lib/types";
 
@@ -24,9 +26,7 @@ type Tab = "announcements" | "classes" | "materials" | "assessments" | "discussi
 function StudentProgramme() {
   const id = useSearchParams().get("id") ?? "";
   const [data, setData] = useState<Detail | null>(null);
-  const [tab, setTab] = useState<Tab>(() =>
-    typeof window !== "undefined" && window.location.hash === "#assessments" ? "assessments" : "announcements",
-  );
+  const [tab, setTab] = useState<Tab>(() => (typeof window !== "undefined" && window.location.hash === "#assessments" ? "assessments" : "announcements"));
   const [error, setError] = useState(id ? "" : "No programme was chosen.");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -36,39 +36,31 @@ function StudentProgramme() {
   }, [id, reloadKey]);
 
   if (error) return <Notice tone="error">{error}</Notice>;
-  if (!data) return <p className="text-ink-muted">Loading…</p>;
+  if (!data) return <SkeletonPage />;
 
   return (
     <>
-      <PageTitle kicker="Programme" title={data.programme.title} />
-      <dl className="mt-6 grid max-w-4xl border-t border-line text-[0.9375rem] md:grid-cols-2 md:gap-x-10">
-        <div className="border-b border-line py-3">
-          <dt className="text-sm text-ink-muted">{data.tutors.length === 1 ? "Tutor" : "Tutors"}</dt>
-          <dd>{data.tutors.length ? data.tutors.join(", ") : "To be assigned"}</dd>
-        </div>
-        {data.programme.cover_note ? (
-          <div className="border-b border-line py-3">
-            <dt className="text-sm text-ink-muted">What you will gain</dt>
-            <dd>{data.programme.cover_note}</dd>
-          </div>
-        ) : null}
-      </dl>
-
-      <div className="mt-8">
+      <PageHeader
+        kicker="Programme"
+        title={data.programme.title}
+        description={data.programme.cover_note || data.programme.description}
+        meta={<span>{data.tutors.length ? `${data.tutors.length === 1 ? "Tutor" : "Tutors"}: ${data.tutors.join(", ")}` : "Tutor to be assigned"}</span>}
+      />
+      <div className="mt-6">
         <Tabs
           label="Programme sections"
           value={tab}
           onChange={setTab}
           tabs={[
             { id: "announcements", label: "Announcements" },
-            { id: "classes", label: `Classes (${data.classes.length})` },
+            { id: "classes", label: "Classes", count: data.classes.length },
             { id: "materials", label: "Materials" },
-            { id: "assessments", label: `Assessments (${data.assessments.length})` },
+            { id: "assessments", label: "Assessments", count: data.assessments.length },
             { id: "discussion", label: "Discussion" },
           ]}
         />
       </div>
-      <div className="mt-5">
+      <div className="mt-8">
         {tab === "announcements" ? <Announcements base="/student" programmeId={id} classes={data.classes} canTeach={false} /> : null}
         {tab === "classes" ? <ClassList classes={data.classes} /> : null}
         {tab === "materials" ? <Materials base="/student" programmeId={id} canTeach={false} /> : null}
@@ -81,7 +73,7 @@ function StudentProgramme() {
 
 export default function StudentProgrammePage() {
   return (
-    <Suspense>
+    <Suspense fallback={<SkeletonPage />}>
       <StudentProgramme />
     </Suspense>
   );

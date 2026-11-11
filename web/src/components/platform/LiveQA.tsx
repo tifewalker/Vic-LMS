@@ -1,30 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { controlClass } from "@/components/ui/Field";
+import { SkeletonLines } from "@/components/ui/Skeleton";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/cx";
 import { supabase } from "@/lib/supabase";
 import type { People } from "@/lib/types";
 import { useMe } from "./RequireRole";
-import { Button, Notice } from "./ui";
 
 type Message = { id: string; class_id: string; author_id: string; body: string; is_question: boolean; answered: boolean; created_at: string };
 
-/** Realtime message stream for a class. Students can flag questions; tutors mark them answered. */
+/**
+ * Realtime message stream for a class: name, tutor tag and time on each message; questions
+ * marked in clay, answered ones muted. On phones the composer stays pinned to the bottom.
+ */
 export function LiveQA({ base, classId, people, canTeach }: { base: string; classId: string; people: People; canTeach: boolean }) {
   const me = useMe();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const toast = useToast();
+  const [messages, setMessages] = useState<Message[] | null>(null);
   const [body, setBody] = useState("");
   const [isQuestion, setIsQuestion] = useState(false);
   const [questionsOnly, setQuestionsOnly] = useState(false);
-  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
     let cancelled = false;
     api<{ messages: Message[] }>(`${base}/classes/${classId}/messages`).then((res) => {
-      if (!cancelled && res.ok) setMessages(res.data.messages);
+      if (!cancelled) setMessages(res.ok ? res.data.messages : []);
     });
     // New and updated messages arrive straight from Supabase Realtime (RLS applies).
     const channel = supabase()
@@ -33,9 +40,10 @@ export function LiveQA({ base, classId, people, canTeach }: { base: string; clas
         const row = payload.new as Message;
         if (!row?.id) return;
         setMessages((prev) => {
-          const i = prev.findIndex((m) => m.id === row.id);
-          if (i === -1) return [...prev, row];
-          const next = [...prev];
+          const list = prev ?? [];
+          const i = list.findIndex((m) => m.id === row.id);
+          if (i === -1) return [...list, row];
+          const next = [...list];
           next[i] = row;
           return next;
         });
@@ -50,88 +58,85 @@ export function LiveQA({ base, classId, people, canTeach }: { base: string; clas
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length]);
+  }, [messages?.length]);
 
   const name = (id: string) => (id === me.id ? "You" : (people[id]?.full_name ?? "Programme admin"));
-  const roleOf = (id: string) => (id === me.id ? me.role : people[id]?.role);
+  const isTutor = (id: string) => (id === me.id ? me.role !== "student" : people[id]?.role === "tutor");
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError("");
     const res = await api(`${base}/classes/${classId}/messages`, { body: { body, is_question: isQuestion } });
     setBusy(false);
-    if (!res.ok) return setError(res.error);
+    if (!res.ok) return toast(res.error, "error");
     setBody("");
     setIsQuestion(false);
   }
-
   async function toggleAnswered(m: Message) {
     const res = await api(`${base}/messages/${m.id}/answered`, { body: { answered: !m.answered } });
-    if (!res.ok) setError(res.error);
+    if (!res.ok) toast(res.error, "error");
   }
 
-  const shown = questionsOnly ? messages.filter((m) => m.is_question) : messages;
-  const openQuestions = messages.filter((m) => m.is_question && !m.answered).length;
+  const shown = (messages ?? []).filter((m) => !questionsOnly || m.is_question);
+  const open = (messages ?? []).filter((m) => m.is_question && !m.answered).length;
 
   return (
     <section aria-label="Live Q&A">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-ink-muted">
-          {messages.length} message{messages.length === 1 ? "" : "s"}, {openQuestions} open question{openQuestions === 1 ? "" : "s"}
+        <p className="text-ui-xs text-ink-muted">
+          {messages ? `${messages.length} message${messages.length === 1 ? "" : "s"} · ${open} open question${open === 1 ? "" : "s"}` : "Loading messages"}
         </p>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={questionsOnly} onChange={(e) => setQuestionsOnly(e.target.checked)} className="size-4 accent-[var(--accent)]" />
+        <label className="flex cursor-pointer items-center gap-2 text-ui-sm">
+          <input type="checkbox" checked={questionsOnly} onChange={(e) => setQuestionsOnly(e.target.checked)} className="size-4 cursor-pointer accent-[var(--accent)]" />
           Questions only
         </label>
       </div>
 
-      <ol ref={listRef} aria-live="polite" className="mt-3 max-h-[28rem] overflow-y-auto border-y border-line">
-        {shown.length === 0 ? <li className="py-6 text-ink-muted">No messages yet.</li> : null}
+      <ol ref={listRef} aria-live="polite" className="mt-3 max-h-[32rem] overflow-y-auto border-y border-line">
+        {messages === null ? <li className="py-4"><SkeletonLines lines={4} /></li> : null}
+        {messages && shown.length === 0 ? (
+          <li className="py-10">
+            <p className="font-serif text-ui-lg">{questionsOnly ? "No questions yet." : "No messages yet."}</p>
+            <p className="mt-1 text-ui-sm text-ink-muted">{canTeach ? "Questions from students appear here as they are asked." : "Ask a question or say hello. Everyone in the class sees it."}</p>
+          </li>
+        ) : null}
         {shown.map((m) => (
-          <li key={m.id} className={cx("border-b border-line py-3 last:border-b-0", m.is_question && !m.answered && "bg-accent-soft/40")}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p className="text-sm">
-                <span className="font-semibold">{name(m.author_id)}</span>
-                {roleOf(m.author_id) === "tutor" ? <span className="text-ink-muted"> · Tutor</span> : null}
-                <span className="text-ink-muted"> · {new Date(m.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
-              </p>
-              <span className="flex items-center gap-3 text-sm">
-                {m.is_question ? (
-                  <span className={m.answered ? "text-sage-strong" : "font-semibold text-accent-strong"}>{m.answered ? "Answered" : "Question"}</span>
-                ) : null}
-                {canTeach && m.is_question ? (
-                  <Button variant="quiet" onClick={() => toggleAnswered(m)}>
-                    {m.answered ? "Mark unanswered" : "Mark answered"}
-                  </Button>
-                ) : null}
-              </span>
+          <li
+            key={m.id}
+            className={cx(
+              "border-b border-line py-4 last:border-b-0",
+              m.is_question && !m.answered && "border-l-2 border-l-accent pl-4",
+              m.answered && "text-ink-muted",
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className={cx("text-ui-sm font-semibold", m.answered ? "text-ink-muted" : "text-ink")}>{name(m.author_id)}</span>
+              {isTutor(m.author_id) ? <StatusLabel status="tutor" /> : null}
+              <span className="text-ui-xs text-ink-muted">{new Date(m.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+              {m.is_question ? <StatusLabel status={m.answered ? "answered" : "question"} /> : null}
+              {canTeach && m.is_question ? (
+                <Button variant="quiet" size="sm" className="ml-auto" onClick={() => toggleAnswered(m)}>
+                  {m.answered ? "Mark unanswered" : "Mark answered"}
+                </Button>
+              ) : null}
             </div>
-            <p className="mt-1 break-words whitespace-pre-wrap">{m.body}</p>
+            <p className="mt-1 max-w-measure break-words whitespace-pre-wrap">{m.body}</p>
           </li>
         ))}
       </ol>
 
-      <form onSubmit={send} className="mt-4 space-y-3">
-        {error ? <Notice tone="error">{error}</Notice> : null}
+      <form onSubmit={send} className="mt-4 space-y-3 border-line bg-paper max-md:sticky max-md:bottom-0 max-md:-mx-4 max-md:border-t max-md:px-4 max-md:py-3">
         <label className="block">
           <span className="sr-only">Message</span>
-          <textarea
-            rows={2}
-            value={body}
-            maxLength={2000}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Write a message"
-            className="block w-full rounded-sm border border-line bg-white px-3 py-2.5 text-base"
-          />
+          <textarea rows={2} value={body} maxLength={2000} onChange={(e) => setBody(e.target.value)} placeholder="Write a message" className={cx(controlClass, "py-2.5")} />
         </label>
         <div className="flex flex-wrap items-center gap-4">
-          <Button type="submit" disabled={busy || !body.trim()}>
-            {busy ? "Sending…" : "Send"}
+          <Button type="submit" loading={busy} loadingText="Sending…" disabled={!body.trim()}>
+            Send
           </Button>
           {!canTeach ? (
-            <label className="flex items-center gap-2 text-[0.9375rem]">
-              <input type="checkbox" checked={isQuestion} onChange={(e) => setIsQuestion(e.target.checked)} className="size-4 accent-[var(--accent)]" />
+            <label className="flex cursor-pointer items-center gap-2 text-ui-sm">
+              <input type="checkbox" checked={isQuestion} onChange={(e) => setIsQuestion(e.target.checked)} className="size-4 cursor-pointer accent-[var(--accent)]" />
               This is a question
             </label>
           ) : null}

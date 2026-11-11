@@ -8,8 +8,14 @@ import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { ClassList } from "@/components/platform/ClassList";
 import { Discussion } from "@/components/platform/Discussion";
 import { Materials } from "@/components/platform/Materials";
-import { Tabs } from "@/components/platform/Tabs";
-import { Button, Notice, PageTitle } from "@/components/platform/ui";
+import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SkeletonPage } from "@/components/ui/Skeleton";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { Tabs } from "@/components/ui/Tabs";
 import { api } from "@/lib/api";
 import type { Assessment, ClassItem, People } from "@/lib/types";
 
@@ -20,7 +26,6 @@ type Detail = {
   assessments: Assessment[];
 };
 type Tab = "classes" | "announcements" | "materials" | "students" | "assessments" | "discussion";
-const accountLabel: Record<string, string> = { invited: "Not activated", active: "Active", suspended: "Suspended" };
 
 function TutorProgramme() {
   const id = useSearchParams().get("id") ?? "";
@@ -36,14 +41,20 @@ function TutorProgramme() {
   }, [id]);
 
   if (error) return <Notice tone="error">{error}</Notice>;
-  if (!data) return <p className="text-ink-muted">Loading…</p>;
+  if (!data) return <SkeletonPage />;
 
   const people: People = Object.fromEntries(data.students.map((s) => [s.id, { full_name: s.full_name, role: "student" }]));
+  const newAssessment = <Button onClick={() => setCreating(true)}>New assessment</Button>;
 
   return (
     <>
-      <PageTitle kicker="Programme" title={data.programme.title} />
-      <div className="mt-8">
+      <PageHeader
+        kicker="Programme"
+        title={data.programme.title}
+        description={data.programme.description}
+        actions={tab === "assessments" && !creating ? newAssessment : null}
+      />
+      <div className="mt-6">
         <Tabs
           label="Programme sections"
           value={tab}
@@ -52,75 +63,55 @@ function TutorProgramme() {
             setCreating(false);
           }}
           tabs={[
-            { id: "classes", label: `Classes (${data.classes.length})` },
+            { id: "classes", label: "Classes", count: data.classes.length },
             { id: "announcements", label: "Announcements" },
             { id: "materials", label: "Materials" },
-            { id: "students", label: `Students (${data.students.length})` },
-            { id: "assessments", label: `Assessments (${data.assessments.length})` },
+            { id: "students", label: "Students", count: data.students.length },
+            { id: "assessments", label: "Assessments", count: data.assessments.length },
             { id: "discussion", label: "Discussion" },
           ]}
         />
       </div>
 
-      <div className="mt-5">
-        {tab === "classes" ? <ClassList classes={data.classes} /> : null}
+      <div className="mt-8 space-y-6">
+        {tab === "classes" ? <ClassList classes={data.classes} emptyText="The programme admin schedules classes; they will appear here." /> : null}
         {tab === "announcements" ? <Announcements base="/tutor" programmeId={id} classes={data.classes} canTeach /> : null}
         {tab === "materials" ? <Materials base="/tutor" programmeId={id} canTeach /> : null}
 
         {tab === "students" ? (
-          <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-left text-[0.9375rem]">
-              <thead>
-                <tr className="border-y border-line text-sm text-ink-muted">
-                  <th className="py-2.5 pr-4 font-semibold">Name</th>
-                  <th className="py-2.5 pr-4 font-semibold">Matric no.</th>
-                  <th className="py-2.5 font-semibold">Account</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.students.map((s) => (
-                  <tr key={s.id} className="border-b border-line align-top">
-                    <td className="py-3 pr-4">
-                      <span className="block">{s.full_name}</span>
-                      <span className="block text-sm text-ink-muted">{s.email}</span>
-                    </td>
-                    <td className="py-3 pr-4 tabular-nums">{s.matric_no}</td>
-                    <td className="py-3">{accountLabel[s.status] ?? s.status}</td>
-                  </tr>
-                ))}
-                {data.students.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-ink-muted">
-                      No students enrolled yet.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            caption="Students"
+            rows={data.students}
+            rowKey={(s) => s.id}
+            empty={<EmptyState title="No students enrolled yet." text="The programme admin enrols students; they will appear here." />}
+            columns={[
+              {
+                key: "name",
+                header: "Name",
+                primary: true,
+                cell: (s) => (
+                  <>
+                    <span className="block font-semibold">{s.full_name}</span>
+                    <span className="block text-ui-xs break-all text-ink-muted">{s.email}</span>
+                  </>
+                ),
+              },
+              { key: "matric", header: "Matric no.", cell: (s) => <span className="tabular-nums">{s.matric_no}</span> },
+              { key: "status", header: "Account", cell: (s) => <StatusLabel status={s.status} /> },
+            ]}
+          />
         ) : null}
 
         {tab === "assessments" ? (
           <>
-            {!creating ? (
-              <Button size="sm" onClick={() => setCreating(true)}>
-                New assessment
-              </Button>
-            ) : (
-              <AssessmentForm
-                programmeId={id}
-                classes={data.classes}
-                onCancel={() => setCreating(false)}
-                onCreated={(newId) => router.push(`/tutor/assessment/?id=${newId}`)}
-              />
-            )}
-            <AssessmentTable items={data.assessments} classes={data.classes} />
+            {creating ? (
+              <AssessmentForm programmeId={id} classes={data.classes} onCancel={() => setCreating(false)} onCreated={(newId) => router.push(`/tutor/assessment/?id=${newId}`)} />
+            ) : null}
+            <AssessmentTable items={data.assessments} classes={data.classes} emptyAction={creating ? undefined : newAssessment} />
           </>
         ) : null}
 
-        {tab === "discussion" ? (
-          <Discussion base="/tutor" programmeId={id} classId={null} people={people} canTeach />
-        ) : null}
+        {tab === "discussion" ? <Discussion base="/tutor" programmeId={id} classId={null} people={people} canTeach /> : null}
       </div>
     </>
   );
@@ -128,7 +119,7 @@ function TutorProgramme() {
 
 export default function TutorProgrammePage() {
   return (
-    <Suspense>
+    <Suspense fallback={<SkeletonPage />}>
       <TutorProgramme />
     </Suspense>
   );

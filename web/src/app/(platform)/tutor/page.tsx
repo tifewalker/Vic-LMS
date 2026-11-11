@@ -1,61 +1,82 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ClassList } from "@/components/platform/ClassList";
 import { useMe } from "@/components/platform/RequireRole";
-import { Notice, PageTitle } from "@/components/platform/ui";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader, SectionTitle } from "@/components/ui/PageHeader";
+import { Stats } from "@/components/ui/Stats";
 import { api } from "@/lib/api";
 import type { ClassItem } from "@/lib/types";
 
 type Programme = { id: string; title: string; description: string; student_count: number };
+type Data = { programmes: Programme[]; upcoming: ClassItem[] };
 
 export default function TutorDashboard() {
   const me = useMe();
-  const [data, setData] = useState<{ programmes: Programme[]; upcoming: ClassItem[] } | null>(null);
+  const router = useRouter();
+  const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<{ programmes: Programme[]; upcoming: ClassItem[] }>("/tutor/programmes").then((res) => (res.ok ? setData(res.data) : setError(res.error)));
+    api<Data>("/tutor/programmes").then((res) => (res.ok ? setData(res.data) : setError(res.error)));
   }, []);
+
+  const students = data?.programmes.reduce((n, p) => n + p.student_count, 0);
 
   return (
     <>
-      <PageTitle kicker={me.tutor_id ? `Tutor · ${me.tutor_id}` : "Teaching"} title={`Welcome, ${me.full_name.split(" ")[0]}`} />
-      {error ? (
-        <div className="mt-6">
-          <Notice tone="error">{error}</Notice>
-        </div>
-      ) : null}
+      <PageHeader kicker={me.tutor_id ? `Tutor · ${me.tutor_id}` : "Teaching"} title={`Welcome, ${me.full_name.split(" ")[0]}`} description="Your programmes and the classes coming up." />
+      {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
 
-      <section className="mt-8" aria-labelledby="upcoming-title">
-        <h2 id="upcoming-title" className="text-2xl">
-          Upcoming classes
-        </h2>
-        <div className="mt-3">{data ? <ClassList classes={data.upcoming} showProgramme /> : <p className="text-ink-muted">Loading…</p>}</div>
+      <div className="mt-8">
+        <Stats
+          label="Teaching"
+          items={[
+            { label: "My programmes", value: data?.programmes.length ?? null },
+            { label: "Students", value: students ?? null },
+            { label: "Upcoming classes", value: data?.upcoming.length ?? null },
+          ]}
+        />
+      </div>
+
+      <section className="mt-12" aria-labelledby="upcoming-title">
+        <SectionTitle id="upcoming-title">Upcoming classes</SectionTitle>
+        <div className="mt-4">
+          <ClassList classes={data?.upcoming ?? null} showProgramme emptyText="Classes the programme admin schedules for you will appear here." />
+        </div>
       </section>
 
-      <section className="mt-10" aria-labelledby="programmes-title">
-        <h2 id="programmes-title" className="text-2xl">
-          My programmes
-        </h2>
-        <ul className="mt-3 border-t border-line">
-          {data?.programmes.length === 0 ? (
-            <li className="py-4 text-ink-muted">You have not been assigned to a programme yet. The programme admin will add you.</li>
-          ) : null}
-          {data?.programmes.map((p) => (
-            <li key={p.id} className="border-b border-line">
-              <a href={`/tutor/programme/?id=${p.id}`} className="group grid gap-1 py-4 sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-6">
-                <span>
-                  <span className="block font-serif text-xl group-hover:text-accent-strong">{p.title}</span>
-                  <span className="block text-sm text-ink-muted">{p.description}</span>
-                </span>
-                <span className="text-[0.9375rem] text-ink-muted">
-                  {p.student_count} student{p.student_count === 1 ? "" : "s"}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
+      <section className="mt-12" aria-labelledby="programmes-title">
+        <SectionTitle id="programmes-title">My programmes</SectionTitle>
+        <div className="mt-4">
+          <DataTable
+            caption="My programmes"
+            rows={data?.programmes ?? null}
+            rowKey={(p) => p.id}
+            onRowClick={(p) => router.push(`/tutor/programme/?id=${p.id}`)}
+            empty={<EmptyState title="No programmes yet." text="The programme admin will assign you to a programme." />}
+            columns={[
+              {
+                key: "title",
+                header: "Programme",
+                primary: true,
+                cell: (p) => (
+                  <>
+                    <a href={`/tutor/programme/?id=${p.id}`} className="font-semibold text-ink hover:text-accent-strong hover:underline">
+                      {p.title}
+                    </a>
+                    <span className="block text-ui-xs text-ink-muted">{p.description}</span>
+                  </>
+                ),
+              },
+              { key: "students", header: "Students", numeric: true, cell: (p) => p.student_count },
+            ]}
+          />
+        </div>
       </section>
     </>
   );
