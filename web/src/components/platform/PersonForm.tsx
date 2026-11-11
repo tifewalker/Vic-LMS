@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/Field";
+import { Notice } from "@/components/ui/Notice";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
-import { Button, Field, Notice } from "./ui";
 
 type Created = { id: string; tutor_id: string | null; invite: "sent" | "pending" | "failed" };
 
@@ -12,8 +15,9 @@ const inviteText: Record<Created["invite"], string> = {
   failed: "The account was created but the invite could not be sent. Use Resend invite on the Users page.",
 };
 
-/** Name + email form that creates a tutor or an admin and sends the invite. */
+/** Name and email form that creates a tutor or an admin and sends the invite. */
 export function PersonForm({ kind }: { kind: "tutor" | "admin" }) {
+  const toast = useToast();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -24,29 +28,27 @@ export function PersonForm({ kind }: { kind: "tutor" | "admin" }) {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const res = await api<Created>(kind === "tutor" ? "/admin/tutors" : "/admin/admins", {
-      body: { full_name: fullName, email },
-    });
+    const res = await api<Created>(kind === "tutor" ? "/admin/tutors" : "/admin/admins", { body: { full_name: fullName, email } });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setCreated({ ...res.data, name: fullName.trim() });
+    toast(`${fullName.trim()} added.`);
     setFullName("");
     setEmail("");
   }
 
   return (
-    <div className="mt-8 max-w-md space-y-6">
+    <div className="max-w-md space-y-6">
       {created ? (
         <Notice tone="success">
           {created.name} has been added{created.tutor_id ? ` with tutor ID ${created.tutor_id}` : ""}. {inviteText[created.invite]}
         </Notice>
       ) : null}
-      <form onSubmit={onSubmit} className="space-y-5" noValidate>
-        {error ? <Notice tone="error">{error}</Notice> : null}
-        <Field label="Full name" autoComplete="off" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        <Field label="Email" type="email" autoComplete="off" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Button type="submit" disabled={busy || !fullName.trim() || !email.trim()}>
-          {busy ? "Adding…" : kind === "tutor" ? "Add tutor and send invite" : "Add admin and send invite"}
+      <form onSubmit={onSubmit} className="space-y-6" noValidate>
+        <TextField label="Full name" autoComplete="off" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <TextField label="Email" type="email" autoComplete="off" required value={email} onChange={(e) => setEmail(e.target.value)} error={error || undefined} />
+        <Button type="submit" loading={busy} loadingText="Adding…" disabled={!fullName.trim() || !email.trim()}>
+          {kind === "tutor" ? "Add tutor and send invite" : "Add admin and send invite"}
         </Button>
       </form>
     </div>

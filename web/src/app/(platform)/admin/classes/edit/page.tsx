@@ -3,55 +3,67 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ClassForm } from "@/components/platform/ClassForm";
-import { ConfirmButton } from "@/components/platform/ConfirmButton";
-import { Notice, PageTitle } from "@/components/platform/ui";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SkeletonPage } from "@/components/ui/Skeleton";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import { formatClassTime } from "@/lib/dates";
 import type { ClassItem } from "@/lib/types";
 
 function EditClass() {
   const id = useSearchParams().get("id") ?? "";
+  const toast = useToast();
+  const confirm = useConfirm();
   const [cls, setCls] = useState<ClassItem | null>(null);
   const [error, setError] = useState(id ? "" : "No class was chosen.");
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     api<{ class: ClassItem }>(`/admin/classes/${encodeURIComponent(id)}`).then((res) => (res.ok ? setCls(res.data.class) : setError(res.error)));
   }, [id]);
 
-  if (error) return <Notice tone="error">{error}</Notice>;
-  if (!cls) return <p className="text-ink-muted">Loading…</p>;
+  if (error && !cls) return <Notice tone="error">{error}</Notice>;
+  if (!cls) return <SkeletonPage />;
   const back = `/admin/programmes/view/?id=${cls.programme_id}`;
+
+  async function remove() {
+    if (!(await confirm({ title: "Delete this class?", body: "Its live Q&A, discussion and links are deleted too. This cannot be undone.", confirmLabel: "Delete class" }))) return;
+    const res = await api(`/admin/classes/${cls!.id}`, { method: "DELETE" });
+    if (res.ok) window.location.replace(back);
+    else toast(res.error, "error");
+  }
 
   return (
     <>
-      <PageTitle kicker={cls.programme?.title ?? "Class"} title={`Edit: ${cls.title}`}>
-        <a href={`/class/?id=${cls.id}`} className="text-[0.9375rem] font-semibold text-accent-strong hover:underline">
-          Open class page
-        </a>
-      </PageTitle>
-      {saved ? (
-        <div className="mt-6">
-          <Notice tone="success">Class saved.</Notice>
-        </div>
-      ) : null}
+      <PageHeader
+        kicker={cls.programme?.title ?? "Class"}
+        title={cls.title}
+        meta={
+          <>
+            <span>{formatClassTime(cls.starts_at, cls.ends_at)}</span>
+            <StatusLabel status={cls.status} />
+          </>
+        }
+        actions={
+          <ButtonLink href={`/class/?id=${cls.id}`} variant="secondary">
+            Open class page
+          </ButtonLink>
+        }
+      />
       <div className="mt-8">
-        <ClassForm existing={cls} onSaved={() => setSaved(true)} />
+        <ClassForm existing={cls} onSaved={() => toast("Class saved.")} />
       </div>
-      <div className="mt-12 flex flex-wrap items-center gap-6 border-t border-line pt-6">
-        <a href={back} className="text-accent-strong hover:underline">
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-6 border-t border-line pt-6">
+        <a href={back} className="text-ui-sm font-semibold text-accent-strong underline decoration-accent/40 underline-offset-[0.22em] hover:decoration-accent-strong">
           Back to the programme
         </a>
-        <ConfirmButton
-          label="Delete this class"
-          question="Delete the class, its live Q&A and discussion?"
-          confirmLabel="Delete"
-          onConfirm={async () => {
-            const res = await api(`/admin/classes/${cls.id}`, { method: "DELETE" });
-            if (res.ok) window.location.replace(back);
-            else setError(res.error);
-          }}
-        />
+        <Button variant="secondary" onClick={remove}>
+          Delete this class
+        </Button>
       </div>
     </>
   );
@@ -59,7 +71,7 @@ function EditClass() {
 
 export default function EditClassPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<SkeletonPage />}>
       <EditClass />
     </Suspense>
   );

@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, inputClass, Notice, PageTitle } from "@/components/platform/ui";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
+import { FileField, SelectField } from "@/components/ui/Field";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader, SectionTitle } from "@/components/ui/PageHeader";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 import { checkSheet, readFile, type PreviewRow } from "@/lib/import-rows";
-import { cx } from "@/lib/cx";
 
 type ImportResult = {
   created: number;
@@ -13,10 +18,10 @@ type ImportResult = {
   invites: { sent: number; failed: number; stillPending: number };
   enrolled: { added: number } | null;
 };
-
 type ProgrammeOption = { id: string; title: string; is_active: boolean };
 
 export default function ImportPage() {
+  const toast = useToast();
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<PreviewRow[] | null>(null);
   const [error, setError] = useState("");
@@ -57,124 +62,118 @@ export default function ImportPage() {
     if (!res.ok) return setError(res.error);
     // The API numbers rows from 1 in the order sent; map back to file line numbers.
     setResult({ data: res.data, lines: valid.map((r) => r.line) });
+    toast(`Created ${res.data.created} student${res.data.created === 1 ? "" : "s"}.`);
     setRows(null);
   }
 
+  const notImported = result
+    ? [
+        ...result.data.skipped.map((s) => ({ row: s.row, text: s.reason })),
+        ...result.data.errors.map((e) => ({ row: e.row, text: e.messages.join(" ") })),
+      ].sort((a, b) => a.row - b.row)
+    : [];
+
   return (
     <>
-      <PageTitle kicker="Users" title="Import students">
-        <a href="/templates/students-template.csv" download className="text-[0.9375rem] font-semibold text-accent-strong hover:underline">
-          Download CSV template
-        </a>
-      </PageTitle>
+      <PageHeader
+        kicker="People"
+        title="Import students"
+        description="Upload a .csv or .xlsx file with matric_no, full_name and email. You see a preview before anything is saved."
+        actions={
+          <ButtonLink href="/templates/students-template.csv" download variant="secondary">
+            Download CSV template
+          </ButtonLink>
+        }
+      />
 
-      <div className="mt-8 max-w-2xl space-y-4">
-        <p>
-          Upload a .csv or .xlsx file with the columns <code>matric_no</code>, <code>full_name</code> and <code>email</code>. You will
-          see a preview before anything is saved.
-        </p>
-        <label className="block">
-          <span className="block text-[0.9375rem] font-semibold">Student list</span>
-          <input
-            type="file"
-            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            onChange={onFile}
-            className="mt-1.5 block w-full text-[0.9375rem] file:mr-4 file:cursor-pointer file:rounded-sm file:border file:border-line file:bg-paper file:px-4 file:py-2 file:font-semibold file:text-ink"
-          />
-        </label>
-        <label className="block max-w-md">
-          <span className="block text-[0.9375rem] font-semibold">Enrol in a programme (optional)</span>
-          <select value={programmeId} onChange={(e) => setProgrammeId(e.target.value)} className={`mt-1.5 ${inputClass}`}>
-            <option value="">Not yet</option>
-            {programmes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="mt-8 grid max-w-2xl gap-6">
+        <FileField label="Student list" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={onFile} />
+        <SelectField label="Enrol in a programme" optional value={programmeId} onChange={(e) => setProgrammeId(e.target.value)}>
+          <option value="">Not yet</option>
+          {programmes.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </SelectField>
         {error ? <Notice tone="error">{error}</Notice> : null}
       </div>
 
       {rows ? (
-        <section className="mt-10" aria-labelledby="preview-title">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 id="preview-title" className="text-2xl">
-                Preview of {fileName}
-              </h2>
-              <p className="mt-1 text-ink-muted">
-                {valid.length} ready to import{invalid ? `, ${invalid} with problems (these will be left out)` : ""}.
-              </p>
-            </div>
-            <Button onClick={onConfirm} disabled={busy || valid.length === 0}>
-              {busy ? "Importing…" : `Import ${valid.length} student${valid.length === 1 ? "" : "s"}`}
-            </Button>
-          </div>
-          <div className="mt-4 max-h-[60vh] overflow-auto border-y border-line">
-            <table className="w-full min-w-[720px] border-collapse text-left text-[0.9375rem]">
-              <thead className="sticky top-0 bg-paper">
-                <tr className="border-b border-line text-sm text-ink-muted">
-                  <th className="py-2 pr-4 font-semibold">Line</th>
-                  <th className="py-2 pr-4 font-semibold">Matric no.</th>
-                  <th className="py-2 pr-4 font-semibold">Full name</th>
-                  <th className="py-2 pr-4 font-semibold">Email</th>
-                  <th className="py-2 font-semibold">Check</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.line} className={cx("border-b border-line align-top", r.problems.length > 0 && "bg-accent-soft/50")}>
-                    <td className="py-2 pr-4 tabular-nums text-ink-muted">{r.line}</td>
-                    <td className="py-2 pr-4">{r.matric_no}</td>
-                    <td className="py-2 pr-4">{r.full_name}</td>
-                    <td className="py-2 pr-4">{r.email}</td>
-                    <td className={cx("py-2 text-sm", r.problems.length ? "text-accent-strong" : "text-sage-strong")}>
-                      {r.problems.length ? r.problems.join(" ") : "Ready"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="mt-12" aria-labelledby="preview-title">
+          <SectionTitle
+            id="preview-title"
+            action={
+              <Button onClick={onConfirm} loading={busy} loadingText="Importing…" disabled={valid.length === 0}>
+                Import {valid.length} student{valid.length === 1 ? "" : "s"}
+              </Button>
+            }
+          >
+            Preview of {fileName}
+          </SectionTitle>
+          <p className="mt-1 text-ui-sm text-ink-muted">
+            {valid.length} ready to import{invalid ? `, ${invalid} with problems (these will be left out)` : ""}.
+          </p>
+          <div className="mt-4">
+            <DataTable
+              caption={`Preview of ${fileName}`}
+              rows={rows}
+              rowKey={(r) => String(r.line)}
+              columns={[
+                {
+                  key: "student",
+                  header: "Student",
+                  primary: true,
+                  cell: (r) => (
+                    <>
+                      <span className="block font-semibold">{r.full_name || <span className="text-ink-muted">No name</span>}</span>
+                      <span className="block text-ui-xs break-all text-ink-muted">{r.email}</span>
+                    </>
+                  ),
+                },
+                { key: "matric", header: "Matric no.", cell: (r) => <span className="tabular-nums">{r.matric_no}</span> },
+                { key: "line", header: "Line", numeric: true, cell: (r) => r.line },
+                {
+                  key: "check",
+                  header: "Check",
+                  cell: (r) =>
+                    r.problems.length ? (
+                      <span className="text-ui-xs font-semibold text-accent-strong">{r.problems.join(" ")}</span>
+                    ) : (
+                      <StatusLabel status="ready" label="Ready" tone="sage" />
+                    ),
+                },
+              ]}
+            />
           </div>
         </section>
       ) : null}
 
       {result ? (
-        <section className="mt-10 max-w-3xl space-y-4" aria-labelledby="result-title">
-          <h2 id="result-title" className="text-2xl">
-            Import finished
-          </h2>
+        <section className="mt-12 max-w-3xl space-y-6" aria-labelledby="result-title">
+          <SectionTitle id="result-title">Import finished</SectionTitle>
           <Notice tone="success">
             Created {result.data.created} student{result.data.created === 1 ? "" : "s"}. Sent {result.data.invites.sent} invite
-            {result.data.invites.sent === 1 ? "" : "s"}.
-            {result.data.enrolled ? ` Enrolled ${result.data.enrolled.added} in the programme.` : ""}
+            {result.data.invites.sent === 1 ? "" : "s"}.{result.data.enrolled ? ` Enrolled ${result.data.enrolled.added} in the programme.` : ""}
             {result.data.invites.stillPending
               ? ` ${result.data.invites.stillPending} invites are waiting for tomorrow's email allowance; use Send pending invites on the Users page.`
               : ""}
           </Notice>
-          {result.data.skipped.length || result.data.errors.length ? (
+          {notImported.length ? (
             <div>
-              <h3 className="text-lg">Not imported</h3>
-              <ul className="mt-2 border-t border-line text-[0.9375rem]">
-                {[
-                  ...result.data.skipped.map((s) => ({ row: s.row, text: s.reason })),
-                  ...result.data.errors.map((e) => ({ row: e.row, text: e.messages.join(" ") })),
-                ]
-                  .sort((a, b) => a.row - b.row)
-                  .map((item) => (
-                    <li key={item.row} className="border-b border-line py-2">
-                      <span className="text-ink-muted">Line {result.lines[item.row - 1]}:</span> {item.text}
-                    </li>
-                  ))}
+              <h3 className="ui-label">Not imported</h3>
+              <ul className="mt-2 border-t border-line">
+                {notImported.map((item) => (
+                  <li key={item.row} className="border-b border-line py-3">
+                    <span className="text-ink-muted">Line {result.lines[item.row - 1]}:</span> {item.text}
+                  </li>
+                ))}
               </ul>
             </div>
           ) : null}
-          <p>
-            <a href="/admin/users/?role=student" className="font-semibold text-accent-strong hover:underline">
-              Go to students
-            </a>
-          </p>
+          <ButtonLink href="/admin/users/?role=student" variant="secondary">
+            Go to students
+          </ButtonLink>
         </section>
       ) : null}
     </>

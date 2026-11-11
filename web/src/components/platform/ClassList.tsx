@@ -1,35 +1,66 @@
 "use client";
 
-import { formatDateTime, formatTimeRange } from "@/lib/dates";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { formatClassTime } from "@/lib/dates";
 import type { ClassItem } from "@/lib/types";
-import { ClassStatus } from "./Tabs";
 
-/** Classes as a ruled list. Each opens the class page; admins also get an edit link. */
-export function ClassList({ classes, editable = false, showProgramme = false }: { classes: ClassItem[]; editable?: boolean; showProgramme?: boolean }) {
-  if (classes.length === 0) return <p className="py-4 text-ink-muted">No classes yet.</p>;
+/** Classes as a table (cards on phones). Each opens the class page; admins also get Edit. */
+export function ClassList({
+  classes,
+  editable = false,
+  showProgramme = false,
+  emptyAction,
+  emptyText = "Classes will appear here once they are scheduled.",
+}: {
+  classes: ClassItem[] | null;
+  editable?: boolean;
+  showProgramme?: boolean;
+  emptyAction?: React.ReactNode;
+  emptyText?: string;
+}) {
   return (
-    <ul className="border-t border-line">
-      {classes.map((c) => (
-        <li key={c.id} className="grid gap-1 border-b border-line py-3 sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-6">
-          <div className="min-w-0">
-            <a href={`/class/?id=${c.id}`} className="font-serif text-lg text-ink hover:text-accent-strong">
-              {c.title}
-            </a>
-            <p className="text-sm text-ink-muted">
-              {formatDateTime(c.starts_at)}, {formatTimeRange(c.starts_at, c.ends_at)}
-              {showProgramme && c.programme ? ` · ${c.programme.title}` : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ClassStatus status={c.status} />
-            {editable ? (
-              <a href={`/admin/classes/edit/?id=${c.id}`} className="text-[0.9375rem] font-semibold text-accent-strong hover:underline">
-                Edit
+    <DataTable
+      caption="Classes"
+      rows={classes}
+      rowKey={(c) => c.id}
+      onRowClick={(c) => window.location.assign(`/class/?id=${c.id}`)}
+      empty={<EmptyState title="No classes yet." text={emptyText} action={emptyAction} />}
+      columns={[
+        {
+          key: "class",
+          header: "Class",
+          primary: true,
+          cell: (c) => (
+            <>
+              <a href={`/class/?id=${c.id}`} className="font-semibold text-ink hover:text-accent-strong hover:underline">
+                {c.title}
               </a>
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
+              <span className="block text-ui-xs text-ink-muted">
+                {formatClassTime(c.starts_at, c.ends_at)}
+                {showProgramme && c.programme ? ` · ${c.programme.title}` : ""}
+              </span>
+            </>
+          ),
+        },
+        { key: "status", header: "Status", cell: (c) => <StatusLabel status={c.status} />, className: "w-36" },
+        ...(editable
+          ? [
+              {
+                key: "edit",
+                header: "Actions",
+                hiddenHeader: true,
+                className: "w-20 text-right",
+                cell: (c: ClassItem) => (
+                  <a href={`/admin/classes/edit/?id=${c.id}`} className="font-semibold text-accent-strong underline decoration-accent/40 underline-offset-[0.22em] hover:decoration-accent-strong">
+                    Edit
+                  </a>
+                ),
+              },
+            ]
+          : []),
+      ]}
+    />
   );
 }

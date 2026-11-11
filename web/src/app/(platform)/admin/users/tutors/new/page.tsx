@@ -1,16 +1,15 @@
 "use client";
 
 import { PersonForm } from "@/components/platform/PersonForm";
-import { PageTitle } from "@/components/platform/ui";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function NewTutorPage() {
   return (
     <>
-      <PageTitle kicker="Users" title="Add a tutor" />
-      <p className="mt-6 max-w-xl text-ink-muted">
-        The tutor ID is created automatically. The tutor gets an email with a link to set their password.
-      </p>
-      <PersonForm kind="tutor" />
+      <PageHeader kicker="People" title="Add a tutor" description="The tutor ID is created automatically. The tutor gets an email with a link to set their password." />
+      <div className="mt-8">
+        <PersonForm kind="tutor" />
+      </div>
     </>
   );
 }

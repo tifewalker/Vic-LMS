@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Field, Notice, PageTitle } from "@/components/platform/ui";
+import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckboxField, TextArea, TextField } from "@/components/ui/Field";
+import { Notice } from "@/components/ui/Notice";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatusLabel } from "@/components/ui/StatusLabel";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
 
 type Programme = {
@@ -15,12 +22,13 @@ type Programme = {
   class_count: number;
 };
 type Draft = { id?: string; title: string; description: string; cover_note: string; is_active: boolean };
+const blank: Draft = { title: "", description: "", cover_note: "", is_active: true };
 
 export default function ProgrammesPage() {
+  const toast = useToast();
   const [programmes, setProgrammes] = useState<Programme[] | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -37,107 +45,86 @@ export default function ProgrammesPage() {
     const res = id ? await api(`/admin/programmes/${id}`, { method: "PATCH", body }) : await api("/admin/programmes", { body });
     setBusy(false);
     if (!res.ok) return setError(res.error);
-    setNotice(id ? "Programme saved." : "Programme created.");
+    toast(id ? "Programme saved." : "Programme created.");
     setDraft(null);
     setReloadKey((k) => k + 1);
   }
 
   return (
     <>
-      <PageTitle title="Programmes">
-        {!draft ? <Button onClick={() => setDraft({ title: "", description: "", cover_note: "", is_active: true })}>New programme</Button> : null}
-      </PageTitle>
-
-      <div className="mt-6 space-y-3">
-        {notice ? <Notice tone="success">{notice}</Notice> : null}
-        {error ? <Notice tone="error">{error}</Notice> : null}
-      </div>
+      <PageHeader
+        kicker="Teaching"
+        title="Programmes"
+        description="Each programme is one course. Students and tutors are enrolled per programme."
+        actions={!draft ? <Button onClick={() => setDraft(blank)}>New programme</Button> : null}
+      />
 
       {draft ? (
-        <form onSubmit={save} className="mt-6 max-w-2xl space-y-5 border border-line p-5 md:p-6" noValidate>
-          <h2 className="text-2xl">{draft.id ? "Edit programme" : "New programme"}</h2>
-          <Field label="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          <label className="block">
-            <span className="block text-[0.9375rem] font-semibold">Description</span>
-            <textarea
-              rows={3}
-              value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              className="mt-1.5 block w-full rounded-sm border border-line bg-white px-3 py-2.5 text-base"
-            />
-          </label>
-          <label className="block">
-            <span className="block text-[0.9375rem] font-semibold">What you will gain</span>
-            <span className="block text-sm text-ink-muted">A short note shown to students on the programme page.</span>
-            <textarea
-              rows={3}
-              value={draft.cover_note}
-              onChange={(e) => setDraft({ ...draft, cover_note: e.target.value })}
-              className="mt-1.5 block w-full rounded-sm border border-line bg-white px-3 py-2.5 text-base"
-            />
-          </label>
-          <label className="flex items-center gap-2.5">
-            <input type="checkbox" checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} className="size-4 accent-[var(--accent)]" />
-            Active
-          </label>
+        <form onSubmit={save} className="mt-8 max-w-2xl space-y-6 border border-line bg-paper p-6" noValidate>
+          <h2 className="text-ui-md font-semibold">{draft.id ? "Edit programme" : "New programme"}</h2>
+          <TextField label="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} required />
+          <TextArea label="Description" optional rows={3} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <TextArea
+            label="What you will gain"
+            optional
+            hint="A short note shown to students on the programme page."
+            rows={3}
+            value={draft.cover_note}
+            onChange={(e) => setDraft({ ...draft, cover_note: e.target.value })}
+          />
+          <CheckboxField label="Active" hint="Inactive programmes are hidden from the import list." checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
+          {error ? <Notice tone="error">{error}</Notice> : null}
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={busy || !draft.title.trim()}>
-              {busy ? "Saving…" : "Save programme"}
+            <Button type="submit" loading={busy} loadingText="Saving…" disabled={!draft.title.trim()}>
+              Save programme
             </Button>
             <Button variant="secondary" onClick={() => setDraft(null)}>
               Cancel
             </Button>
           </div>
         </form>
+      ) : error ? (
+        <Notice tone="error" className="mt-6">{error}</Notice>
       ) : null}
 
-      <div className="relative mt-8 overflow-x-auto">
-        <table className="w-full min-w-[680px] border-collapse text-left text-[0.9375rem]">
-          <thead>
-            <tr className="border-y border-line text-sm text-ink-muted">
-              <th className="py-2.5 pr-4 font-semibold">Programme</th>
-              <th className="py-2.5 pr-4 font-semibold">Students</th>
-              <th className="py-2.5 pr-4 font-semibold">Tutors</th>
-              <th className="py-2.5 pr-4 font-semibold">Classes</th>
-              <th className="py-2.5 font-semibold">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {programmes?.map((p) => (
-              <tr key={p.id} className="border-b border-line align-top">
-                <td className="py-3 pr-4">
-                  <a href={`/admin/programmes/view/?id=${p.id}`} className="font-semibold text-accent-strong hover:underline">
+      <div className="mt-8">
+        <DataTable
+          caption="Programmes"
+          rows={programmes}
+          rowKey={(p) => p.id}
+          onRowClick={(p) => window.location.assign(`/admin/programmes/view/?id=${p.id}`)}
+          empty={<EmptyState title="No programmes yet." text="Create a programme to start scheduling classes." action={<Button onClick={() => setDraft(blank)}>New programme</Button>} />}
+          columns={[
+            {
+              key: "title",
+              header: "Programme",
+              primary: true,
+              cell: (p) => (
+                <>
+                  <a href={`/admin/programmes/view/?id=${p.id}`} className="font-semibold text-ink hover:text-accent-strong hover:underline">
                     {p.title}
                   </a>
-                  <span className="block text-sm text-ink-muted">{p.is_active ? p.description : "Inactive"}</span>
-                </td>
-                <td className="py-3 pr-4 tabular-nums">{p.student_count}</td>
-                <td className="py-3 pr-4 tabular-nums">{p.tutor_count}</td>
-                <td className="py-3 pr-4 tabular-nums">{p.class_count}</td>
-                <td className="py-3 text-right">
-                  <Button
-                    variant="quiet"
-                    onClick={() => {
-                      setNotice("");
-                      setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active });
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {programmes?.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-8 text-ink-muted">
-                  No programmes yet.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
+                  <span className="block max-w-measure text-ui-xs text-ink-muted">{p.description}</span>
+                </>
+              ),
+            },
+            { key: "state", header: "Status", cell: (p) => <StatusLabel status={p.is_active ? "active" : "draft"} label={p.is_active ? "Active" : "Inactive"} /> },
+            { key: "students", header: "Students", numeric: true, cell: (p) => p.student_count },
+            { key: "tutors", header: "Tutors", numeric: true, cell: (p) => p.tutor_count },
+            { key: "classes", header: "Classes", numeric: true, cell: (p) => p.class_count },
+            {
+              key: "edit",
+              header: "Actions",
+              hiddenHeader: true,
+              className: "w-16 md:text-right",
+              cell: (p) => (
+                <Button variant="quiet" onClick={() => setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active })}>
+                  Edit
+                </Button>
+              ),
+            },
+          ]}
+        />
       </div>
     </>
   );
