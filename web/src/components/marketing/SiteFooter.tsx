@@ -49,7 +49,12 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line">
-        <p className="container-site py-6 text-[0.9375rem] text-ink-muted">{contact.partnershipLine}</p>
+        <div className="container-site flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 py-6 text-[0.9375rem] text-ink-muted">
+          <p>{contact.partnershipLine}</p>
+          <a href="/photo-credits/" className="text-[0.875rem] underline decoration-line underline-offset-[0.22em] hover:text-ink hover:decoration-ink-muted">
+            Photo credits
+          </a>
+        </div>
       </div>
     </footer>
   );

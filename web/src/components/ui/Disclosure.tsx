@@ -13,6 +13,7 @@ type Props = {
   buttonClassName?: string;
   panelClassName?: string;
   defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 /**
@@ -27,6 +28,7 @@ export function Disclosure({
   buttonClassName,
   panelClassName,
   defaultOpen = false,
+  onOpenChange,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
   const Heading = `h${headingLevel}` as const;
@@ -41,7 +43,10 @@ export function Disclosure({
           id={buttonId}
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            setOpen(!open);
+            onOpenChange?.(!open);
+          }}
           className={cx(
             "group flex w-full cursor-pointer items-start justify-between gap-5 text-left",
             buttonClassName,
