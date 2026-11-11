@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ASSESSMENT_COLUMNS, canTeach, CLASS_COLUMNS, idParam, isAdmin, programmeAccess, programmePeople, zodMessage } from "../lib/access.js";
 import { assessmentPrefix, fileExists, fileMeta, signedDownload, signedUpload } from "../lib/files.js";
 import { embed } from "../lib/invites.js";
+import { liveClasses, tutorProgrammeIds, ungradedCount, unansweredCount } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
@@ -315,6 +316,13 @@ teachRouter.post("/assessments/:id/release", async (req, res) => {
     released = data?.length ?? 0;
   }
   res.json({ released });
+});
+
+/* Sidebar counts for tutors: live classes, unanswered questions, work to grade. */
+teachRouter.get("/nav", async (req, res) => {
+  const ids = isAdmin(req.profile!) ? null : await tutorProgrammeIds(req.profile!.id);
+  const [live, unanswered, ungraded] = await Promise.all([liveClasses(ids), unansweredCount(ids), ungradedCount(ids)]);
+  res.json({ live, unanswered, ungraded });
 });
 
 registerCommunityRoutes(teachRouter);

@@ -29,7 +29,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("id, role, full_name, email, status, created_at")
+    .select("id, role, full_name, email, status, created_at, chat_muted")
     .eq("id", data.user.id)
     .maybeSingle();
   if (!profile) return res.status(401).json({ error: "Please sign in." });

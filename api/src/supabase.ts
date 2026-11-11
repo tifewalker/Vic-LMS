@@ -21,4 +21,6 @@ export type Profile = {
   email: string;
   status: ProfileStatus;
   created_at: string;
+  /** Muted users can read discussions and live Q&A but not post. */
+  chat_muted: boolean;
 };

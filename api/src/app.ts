@@ -5,6 +5,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter, meHandler } from "./routes/auth.js";
 import { learnRouter } from "./routes/learn.js";
+import { moderationRouter } from "./routes/moderation.js";
 import { programmesRouter } from "./routes/programmes.js";
 import { teachRouter } from "./routes/teach.js";
 
@@ -20,6 +21,7 @@ app.use("/auth", authRouter);
 app.get("/me", requireAuth, meHandler);
 app.use("/admin", adminRouter);
 app.use("/admin", programmesRouter);
+app.use("/admin", moderationRouter);
 app.use("/tutor", teachRouter);
 app.use("/student", learnRouter);
 

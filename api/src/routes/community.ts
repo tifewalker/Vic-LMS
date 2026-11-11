@@ -1,13 +1,19 @@
 import type { Router } from "express";
 import { z } from "zod";
-import { canTeach, idParam, programmeAccess, zodMessage } from "../lib/access.js";
+import { canTeach, idParam, isAdmin, programmeAccess, zodMessage } from "../lib/access.js";
+import { logModeration, refuseIfMuted } from "../lib/moderation.js";
 import { admin } from "../supabase.js";
 
 /**
  * Discussion threads, replies and live Q&A. Registered on both the tutor and the student
  * routers; every route checks that the user is enrolled in (or teaches, or administers) the
  * programme. Pinning and marking answers are for tutors and admins only.
+ * Hidden rows are left out for everyone but admins, who see them flagged. Muted users can read but not post.
  */
+
+const THREAD_COLUMNS = "id, programme_id, class_id, author_id, kind, title, body, pinned, answered, created_at, hidden, hidden_at";
+const REPLY_COLUMNS = "id, thread_id, author_id, body, is_answer, created_at, hidden, hidden_at";
+const MESSAGE_COLUMNS = "id, class_id, author_id, body, is_question, answered, created_at, hidden, hidden_at";
 
 const threadBody = z.object({
   class_id: z.uuid().nullable().optional(),
@@ -22,7 +28,7 @@ const messageBody = z.object({
 });
 
 async function threadProgramme(threadId: string) {
-  const { data } = await admin.from("threads").select("id, programme_id").eq("id", threadId).maybeSingle();
+  const { data } = await admin.from("threads").select("id, programme_id, hidden").eq("id", threadId).maybeSingle();
   return data;
 }
 async function classProgramme(classId: string) {
@@ -36,13 +42,15 @@ export function registerCommunityRoutes(router: Router) {
     const id = idParam(req.params.id, res);
     if (!id) return;
     if (!(await programmeAccess(req.profile!, id))) return res.status(404).json({ error: "Not found." });
+    const seesHidden = isAdmin(req.profile!);
     let q = admin
       .from("threads")
-      .select("id, programme_id, class_id, author_id, kind, title, body, pinned, answered, created_at, replies(count)")
+      .select(`${THREAD_COLUMNS}, replies(count)`)
       .eq("programme_id", id)
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(100);
+    if (!seesHidden) q = q.eq("hidden", false).eq("replies.hidden", false);
     const classId = String(req.query.class_id ?? "");
     if (classId === "none") q = q.is("class_id", null);
     else if (classId) q = q.eq("class_id", classId);
@@ -57,6 +65,7 @@ export function registerCommunityRoutes(router: Router) {
     const id = idParam(req.params.id, res);
     if (!id) return;
     if (!(await programmeAccess(req.profile!, id))) return res.status(404).json({ error: "Not found." });
+    if (refuseIfMuted(req.profile!, res)) return;
     const body = threadBody.safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
     if (body.data.class_id) {
@@ -77,11 +86,15 @@ export function registerCommunityRoutes(router: Router) {
     if (!id) return;
     const t = await threadProgramme(id);
     if (!t || !(await programmeAccess(req.profile!, t.programme_id))) return res.status(404).json({ error: "Not found." });
+    const seesHidden = isAdmin(req.profile!);
+    let rq = admin.from("replies").select(REPLY_COLUMNS).eq("thread_id", id).order("created_at");
+    if (!seesHidden) rq = rq.eq("hidden", false);
     const [{ data: thread }, { data: replies }] = await Promise.all([
-      admin.from("threads").select("id, programme_id, class_id, author_id, kind, title, body, pinned, answered, created_at").eq("id", id).single(),
-      admin.from("replies").select("id, thread_id, author_id, body, is_answer, created_at").eq("thread_id", id).order("created_at"),
+      admin.from("threads").select(THREAD_COLUMNS).eq("id", id).single(),
+      rq,
     ]);
-    res.json({ thread, replies: replies ?? [] });
+    if (!thread || (thread.hidden && !seesHidden)) return res.status(404).json({ error: "This thread is no longer available." });
+    res.json({ thread, replies: replies ?? [], muted: req.profile!.chat_muted && !seesHidden });
   });
 
   router.post("/threads/:id/replies", async (req, res) => {
@@ -89,6 +102,8 @@ export function registerCommunityRoutes(router: Router) {
     if (!id) return;
     const t = await threadProgramme(id);
     if (!t || !(await programmeAccess(req.profile!, t.programme_id))) return res.status(404).json({ error: "Not found." });
+    if (t.hidden && !isAdmin(req.profile!)) return res.status(404).json({ error: "This thread is no longer available." });
+    if (refuseIfMuted(req.profile!, res)) return;
     const body = replyBody.safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
     const { data, error } = await admin.from("replies").insert({ thread_id: id, author_id: req.profile!.id, body: body.data.body }).select("id").single();
@@ -103,6 +118,7 @@ export function registerCommunityRoutes(router: Router) {
     if (!t || !canTeach(await programmeAccess(req.profile!, t.programme_id))) return res.status(403).json({ error: "Only tutors can pin threads." });
     const pinned = req.body?.pinned !== false;
     await admin.from("threads").update({ pinned }).eq("id", id);
+    if (isAdmin(req.profile!)) await logModeration(req.profile!.id, pinned ? "pin" : "unpin", "thread", id);
     res.json({ pinned });
   });
 
@@ -119,6 +135,7 @@ export function registerCommunityRoutes(router: Router) {
     await admin.from("replies").update({ is_answer: isAnswer }).eq("id", id);
     const { count } = await admin.from("replies").select("id", { count: "exact", head: true }).eq("thread_id", reply.thread_id).eq("is_answer", true);
     await admin.from("threads").update({ answered: (count ?? 0) > 0 }).eq("id", reply.thread_id);
+    if (isAdmin(req.profile!)) await logModeration(req.profile!.id, isAnswer ? "mark_answered" : "mark_unanswered", "reply", id);
     res.json({ is_answer: isAnswer });
   });
 
@@ -128,13 +145,11 @@ export function registerCommunityRoutes(router: Router) {
     if (!id) return;
     const cls = await classProgramme(id);
     if (!cls || !(await programmeAccess(req.profile!, cls.programme_id))) return res.status(404).json({ error: "Not found." });
-    const { data } = await admin
-      .from("live_messages")
-      .select("id, class_id, author_id, body, is_question, answered, created_at")
-      .eq("class_id", id)
-      .order("created_at")
-      .limit(500);
-    res.json({ messages: data ?? [] });
+    const seesHidden = isAdmin(req.profile!);
+    let q = admin.from("live_messages").select(MESSAGE_COLUMNS).eq("class_id", id).order("created_at").limit(500);
+    if (!seesHidden) q = q.eq("hidden", false);
+    const { data } = await q;
+    res.json({ messages: data ?? [], muted: req.profile!.chat_muted && !seesHidden });
   });
 
   router.post("/classes/:id/messages", async (req, res) => {
@@ -142,6 +157,7 @@ export function registerCommunityRoutes(router: Router) {
     if (!id) return;
     const cls = await classProgramme(id);
     if (!cls || !(await programmeAccess(req.profile!, cls.programme_id))) return res.status(404).json({ error: "Not found." });
+    if (refuseIfMuted(req.profile!, res)) return;
     const body = messageBody.safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
     const { data, error } = await admin
@@ -163,6 +179,7 @@ export function registerCommunityRoutes(router: Router) {
     }
     const answered = req.body?.answered !== false;
     await admin.from("live_messages").update({ answered }).eq("id", id);
+    if (isAdmin(req.profile!)) await logModeration(req.profile!.id, answered ? "mark_answered" : "mark_unanswered", "live_message", id);
     res.json({ answered });
   });
 }

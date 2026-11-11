@@ -99,6 +99,10 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     enrolled = "error" in added ? { added: 0 } : { added: added.added };
   }
 
+  if (created > 0) {
+    const { error: logError } = await admin.from("import_log").insert({ admin_id: req.profile!.id, created_count: created });
+    if (logError) console.error("import_log insert failed", logError.message);
+  }
   const invites = await sendPendingInvites();
   res.json({ created, skipped, errors, invites, enrolled });
 });

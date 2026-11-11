@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ASSESSMENT_COLUMNS, CLASS_COLUMNS, idParam, programmeAccess, programmePeople } from "../lib/access.js";
 import { fileExists, fileMeta, signedDownload, signedUpload, submissionPrefix } from "../lib/files.js";
 import { embed } from "../lib/invites.js";
+import { dueCount, liveClasses, studentProgrammeIds } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
@@ -207,6 +208,13 @@ learnRouter.get("/assessments/:id/my-file", async (req, res) => {
   const url = sub?.file_path ? await signedDownload(sub.file_path) : null;
   if (!url) return res.status(404).json({ error: "No file submitted." });
   res.json({ url });
+});
+
+/* Sidebar counts for students: live classes and assessments still to hand in. */
+learnRouter.get("/nav", async (req, res) => {
+  const ids = await studentProgrammeIds(req.profile!.id);
+  const [live, due] = await Promise.all([liveClasses(ids), dueCount(req.profile!.id, ids)]);
+  res.json({ live, due, muted: req.profile!.chat_muted });
 });
 
 registerCommunityRoutes(learnRouter);
