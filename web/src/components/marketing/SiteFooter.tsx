@@ -7,7 +7,7 @@ const strip = (url: string) => url.replace(/^https?:\/\//, "");
 
 export function SiteFooter() {
   return (
-    <footer id="contact" aria-labelledby="contact-title" className="anchor border-t border-line">
+    <footer id="contact" aria-labelledby="contact-title" className="anchor border-t border-line bg-paper-2">
       <div className="container-site grid gap-y-12 py-16 md:py-20 lg:grid-cols-12 lg:gap-x-8">
         <div className="lg:col-span-5">
           <Brand />

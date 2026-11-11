@@ -2,17 +2,17 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button, Notice, PasswordFields } from "@/components/platform/ui";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Notice } from "@/components/ui/Notice";
+import { PasswordFields } from "@/components/ui/PasswordFields";
+import { SkeletonLines } from "@/components/ui/Skeleton";
 import { api, homeFor, type Role } from "@/lib/api";
 import { storeSession } from "@/lib/supabase";
 
 const INVALID = "This link is no longer valid. Ask the admin to send a new one.";
 
 type Check = { valid: false } | { valid: true; first_name: string };
-type ActivateResponse = {
-  session: { access_token: string; refresh_token: string } | null;
-  profile: { role: Role } | null;
-};
+type ActivateResponse = { session: { access_token: string; refresh_token: string } | null; profile: { role: Role } | null };
 
 function Activate() {
   const token = useSearchParams().get("token") ?? "";
@@ -47,35 +47,36 @@ function Activate() {
 
   if (!check) {
     return (
-      <p className="text-ink-muted" role="status">
-        Checking your link…
-      </p>
+      <div className="space-y-6">
+        <div aria-hidden="true" className="h-10 w-2/3 rounded-sm bg-paper-2" />
+        <SkeletonLines lines={3} />
+      </div>
     );
   }
 
   if (!check.valid) {
     return (
       <>
-        <h1 className="text-[2rem]">Link not valid</h1>
-        <p className="mt-4">{INVALID}</p>
-        <p className="mt-6">
-          <a href="/login/" className="text-accent-strong underline decoration-accent/45 underline-offset-[0.22em]">
-            Go to sign in
-          </a>
-        </p>
+        <p className="ui-label">Activate your account</p>
+        <h1 className="mt-1 font-serif text-ui-xl">Link not valid</h1>
+        <p className="mt-3 max-w-measure">{INVALID}</p>
+        <ButtonLink href="/login/" variant="secondary" className="mt-8">
+          Go to sign in
+        </ButtonLink>
       </>
     );
   }
 
   return (
     <>
-      <h1 className="text-[2rem]">Welcome, {check.first_name}.</h1>
+      <p className="ui-label">Activate your account</p>
+      <h1 className="mt-1 font-serif text-ui-xl">Welcome, {check.first_name}.</h1>
       <p className="mt-2 text-ink-muted">Set your password.</p>
-      <form onSubmit={onSubmit} className="mt-8 space-y-5" noValidate>
+      <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <PasswordFields onChange={setPassword} />
-        <Button type="submit" disabled={busy || !password}>
-          {busy ? "Saving…" : "Set password and continue"}
+        <Button type="submit" loading={busy} loadingText="Saving…" disabled={!password}>
+          Set password and continue
         </Button>
       </form>
     </>

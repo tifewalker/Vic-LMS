@@ -16,7 +16,7 @@ export function SiteHeader() {
           <ul className="flex items-center gap-7 text-[0.9375rem]">
             {navItems.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="text-ink-muted transition-colors hover:text-ink">
+                <a href={item.href} className="border-b-2 border-transparent py-1 text-ink-muted transition-colors hover:border-accent hover:text-ink">
                   {item.label}
                 </a>
               </li>

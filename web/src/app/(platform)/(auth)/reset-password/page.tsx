@@ -2,7 +2,9 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button, Notice, PasswordFields } from "@/components/platform/ui";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { Notice } from "@/components/ui/Notice";
+import { PasswordFields } from "@/components/ui/PasswordFields";
 import { api, homeFor, type Me } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
@@ -38,25 +40,25 @@ function Reset() {
   if (invalid) {
     return (
       <>
-        <h1 className="text-[2rem]">Link not valid</h1>
-        <p className="mt-4">This reset link is no longer valid. Request a new one.</p>
-        <p className="mt-6">
-          <a href="/forgot-password/" className="text-accent-strong underline decoration-accent/45 underline-offset-[0.22em]">
-            Request a new link
-          </a>
-        </p>
+        <p className="ui-label">Account</p>
+        <h1 className="mt-1 font-serif text-ui-xl">Link not valid</h1>
+        <p className="mt-3 max-w-measure">This reset link is no longer valid. Request a new one.</p>
+        <ButtonLink href="/forgot-password/" variant="secondary" className="mt-8">
+          Request a new link
+        </ButtonLink>
       </>
     );
   }
 
   return (
     <>
-      <h1 className="text-[2rem]">Choose a new password</h1>
-      <form onSubmit={onSubmit} className="mt-8 space-y-5" noValidate>
+      <p className="ui-label">Account</p>
+      <h1 className="mt-1 font-serif text-ui-xl">Choose a new password</h1>
+      <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <PasswordFields onChange={setPassword} />
-        <Button type="submit" disabled={busy || !password}>
-          {busy ? "Saving…" : "Save new password"}
+        <Button type="submit" loading={busy} loadingText="Saving…" disabled={!password}>
+          Save new password
         </Button>
       </form>
     </>
