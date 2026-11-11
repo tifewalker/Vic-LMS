@@ -132,7 +132,7 @@ export default function LiveMonitorPage() {
           ))}
         </SelectField>
         <SelectField label="Class" value={klass} onChange={(e) => setKlass(e.target.value)} disabled={!programme} className="w-full sm:w-64">
-          <option value="">{programme ? "All classes" : "Choose a programme first"}</option>
+          <option value="">All classes</option>
           {data?.classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.title}
