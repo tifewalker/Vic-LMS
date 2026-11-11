@@ -1,7 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
-import { webUrl } from "../env.js";
+import { env, webUrl } from "../env.js";
 import { emailsRemainingToday, firstName, resetEmail, sendEmail } from "../lib/email.js";
 import { normaliseEmail, parseIdentifier } from "../lib/identifier.js";
 import { one } from "../lib/invites.js";
@@ -16,12 +16,15 @@ const RESET_REPLY = "If an account exists, we've sent a reset link.";
 const INVALID_LINK = "This link is no longer valid. Ask the admin to send a new one.";
 const TOO_MANY = { error: "Too many attempts. Please wait a few minutes and try again." };
 
+// Production limits are strict. Locally everyone shares one address (::1), so allow far more.
+const LIMIT_FACTOR = env.NODE_ENV === "production" ? 1 : 25;
+
 const byIp = (limit: number) =>
-  rateLimit({ windowMs: 15 * 60 * 1000, limit, standardHeaders: "draft-8", legacyHeaders: false, message: TOO_MANY });
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: limit * LIMIT_FACTOR, standardHeaders: "draft-8", legacyHeaders: false, message: TOO_MANY });
 
 const loginByIdentifier = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 8,
+  limit: 8 * LIMIT_FACTOR,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: TOO_MANY,
@@ -143,7 +146,7 @@ authRouter.post("/activate", byIp(20), async (req, res) => {
 const forgotBody = z.object({ email: z.string().max(200) });
 const forgotByEmail = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 3,
+  limit: 3 * LIMIT_FACTOR,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: (req) => `fp:${normaliseEmail(String(req.body?.email ?? ""))}`,
