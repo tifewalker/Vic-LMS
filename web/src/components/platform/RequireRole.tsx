@@ -1,9 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Notice } from "@/components/ui/Notice";
+import { SkeletonPage } from "@/components/ui/Skeleton";
 import { api, homeFor, signOut, type Me, type Role } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-import { Button, Notice } from "./ui";
 
 const MeContext = createContext<Me | null>(null);
 
@@ -15,6 +17,21 @@ export function useMe(): Me {
 }
 
 type State = { kind: "loading" } | { kind: "ok"; me: Me } | { kind: "blocked"; message: string };
+
+/** Placeholder with the same frame as the app shell, so nothing jumps when it loads. */
+function ShellSkeleton() {
+  return (
+    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div aria-hidden="true" className="hidden border-r border-line bg-paper-2 lg:block" />
+      <div aria-hidden="true" className="h-16 border-b border-line lg:hidden" />
+      <div className="px-4 py-8 md:px-8 lg:px-12 lg:py-12">
+        <div className="mx-auto max-w-[72rem]">
+          <SkeletonPage />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Client-side route guard: checks /me and redirects if signed out or the role is wrong.
@@ -49,16 +66,10 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (state.kind === "loading") {
-    return (
-      <p className="container-site py-16 text-ink-muted" role="status">
-        Loading…
-      </p>
-    );
-  }
+  if (state.kind === "loading") return <ShellSkeleton />;
   if (state.kind === "blocked") {
     return (
-      <div className="container-site max-w-xl py-16">
+      <div className="mx-auto max-w-xl px-4 py-16">
         <Notice tone="error">{state.message}</Notice>
         <Button variant="secondary" className="mt-6" onClick={() => signOut()}>
           Sign out

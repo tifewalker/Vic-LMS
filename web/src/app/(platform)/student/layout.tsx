@@ -1,9 +1,9 @@
 "use client";
 
-import { AppShell } from "@/components/platform/AppShell";
 import { RequireRole } from "@/components/platform/RequireRole";
+import { AppShell } from "@/components/ui/AppShell";
 
-export default function StudentLayout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <RequireRole roles={["student"]}>
       <AppShell>{children}</AppShell>

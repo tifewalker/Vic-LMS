@@ -38,3 +38,9 @@ export function fromLocalInput(value: string): string | null {
 }
 
 export const classStatusLabel: Record<string, string> = { scheduled: "Scheduled", live: "Live now", ended: "Ended" };
+
+/** A class time without repeats, e.g. "Tue 10 Nov 2026 · 20:45 to 21:45". */
+export function formatClassTime(start: string, end: string): string {
+  const day = new Date(start).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).replace(",", "");
+  return `${day} · ${formatTimeRange(start, end)}`;
+}

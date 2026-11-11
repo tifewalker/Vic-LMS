@@ -45,6 +45,18 @@
 }
 
 @theme inline {
+  /* App UI type scale: five sizes only. Serif is for page titles and big numbers. */
+  --text-ui-xs: 0.8125rem; /* 13px: labels, meta, table headers */
+  --text-ui-xs--line-height: 1.25rem;
+  --text-ui-sm: 0.9375rem; /* 15px: body text in the app */
+  --text-ui-sm--line-height: 1.5rem;
+  --text-ui-md: 1.0625rem; /* 17px: section headings, inputs (16px+ avoids zoom on iOS) */
+  --text-ui-md--line-height: 1.625rem;
+  --text-ui-lg: 1.5rem; /* 24px: empty states, card titles */
+  --text-ui-lg--line-height: 2rem;
+  --text-ui-xl: 2rem; /* 32px: page titles and big numbers */
+  --text-ui-xl--line-height: 2.5rem;
+
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
   --color-ink: var(--ink);
@@ -166,4 +178,21 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Native <dialog> backdrop: a plain ink wash, no blur. */
+dialog::backdrop {
+  background: rgb(31 29 26 / 0.4);
+}
+
+/* App label: small uppercase, muted. Used for kickers, table headers and group labels.
+   Defined with @utility so variants work, e.g. max-md:before:ui-label. */
+@utility ui-label {
+  font-family: var(--font-sans);
+  font-size: var(--text-ui-xs);
+  line-height: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
 }

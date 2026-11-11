@@ -1,10 +1,9 @@
 "use client";
 
-import { AppShell } from "@/components/platform/AppShell";
 import { RequireRole } from "@/components/platform/RequireRole";
+import { AppShell } from "@/components/ui/AppShell";
 
-/** The class page is shared: students and tutors of the programme, and admins. The API checks enrolment. */
-export default function ClassLayout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <RequireRole roles={["student", "tutor", "admin", "super_admin"]}>
       <AppShell>{children}</AppShell>

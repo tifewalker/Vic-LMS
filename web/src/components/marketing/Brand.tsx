@@ -7,8 +7,19 @@ import { site } from "@/lib/site";
  * Both brands side by side: OAUSTECH logo, a thin vertical rule, then the
  * Victory Entrepreneurship Centre wordmark set in the heading serif.
  */
-export function Brand({ className }: { className?: string }) {
+export function Brand({ className, stacked = false }: { className?: string; stacked?: boolean }) {
   const logo = images.oaustechLogo;
+  if (stacked) {
+    // Sidebar: logo on top, a short hairline, then the wordmark.
+    return (
+      <span className={cx("flex flex-col items-start gap-3", className)}>
+        <Image src={logo.src} alt={logo.alt} width={163} height={34} loading="eager" className="h-[30px] w-auto" />
+        <span aria-hidden="true" className="h-px w-10 bg-line" />
+        {/* TODO(content): replace this wordmark with the Victory Entrepreneurship Centre logo when supplied. */}
+        <span className="font-serif text-ui-md leading-tight text-ink">{site.operator.name}</span>
+      </span>
+    );
+  }
   return (
     <span className={cx("flex items-center gap-3 sm:gap-4", className)}>
       <Image
