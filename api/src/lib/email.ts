@@ -1,4 +1,5 @@
 import { env } from "../env.js";
+import { brand } from "./brand.js";
 import { admin } from "../supabase.js";
 
 /**
@@ -53,7 +54,7 @@ function layout(heading: string, paragraphs: string[], button: { label: string; 
     `<!doctype html><html lang="en-GB"><body style="margin:0;background:#f5f1e8;font-family:Arial,Helvetica,sans-serif">`,
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1e8;padding:32px 16px"><tr><td align="center">`,
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #d8d0c0;border-radius:4px">`,
-    `<tr><td style="padding:28px 32px 8px;font-family:${SERIF};font-size:15px;color:#5f5a51">Victory Entrepreneurship Centre</td></tr>`,
+    `<tr><td style="padding:28px 32px 8px;font-family:${SERIF};font-size:15px;color:#5f5a51">${brand.operator}</td></tr>`,
     `<tr><td style="padding:8px 32px 0">`,
     `<h1 style="margin:0 0 20px;font-family:${SERIF};font-weight:400;font-size:26px;line-height:1.2;color:#1f1d1a">${heading}</h1>`,
     body,
@@ -67,27 +68,27 @@ function layout(heading: string, paragraphs: string[], button: { label: string; 
 
 export function inviteEmail(p: { to: string; firstName: string; url: string; signInWith: string }): Email {
   const intro =
-    "An account has been created for you on the Victory Entrepreneurship Centre training platform for the OAUSTECH Entrepreneurship, ICT, Digital Skills and Emerging Technologies Training Programme.";
+    `An account has been created for you on the ${brand.operator} training platform for the ${brand.programme}.`;
   const how = `Set your password to activate it. After that you can sign in with ${p.signInWith}.`;
   const expiry = "This link works once and expires in 72 hours.";
   const footer = "If you were not expecting this email, you can ignore it.";
   return {
     kind: "invite",
     to: p.to,
-    subject: "Activate your Victory Entrepreneurship Centre account",
+    subject: `Activate your ${brand.operator} account`,
     html: layout(`Hello ${esc(p.firstName)}`, [esc(intro), esc(how), esc(expiry)], { label: "Set your password", url: p.url }, esc(footer)),
     text: `Hello ${p.firstName},\n\n${intro}\n\n${how}\n\nSet your password: ${p.url}\n\n${expiry}\n\n${footer}`,
   };
 }
 
 export function resetEmail(p: { to: string; firstName: string; url: string }): Email {
-  const intro = "We received a request to reset the password for your Victory Entrepreneurship Centre account.";
+  const intro = `We received a request to reset the password for your ${brand.operator} account.`;
   const expiry = "This link works once and expires in 1 hour.";
   const footer = "If you did not ask to reset your password, you can ignore this email. Your password will not change.";
   return {
     kind: "password_reset",
     to: p.to,
-    subject: "Reset your Victory Entrepreneurship Centre password",
+    subject: `Reset your ${brand.operator} password`,
     html: layout(`Hello ${esc(p.firstName)}`, [esc(intro), esc(expiry)], { label: "Choose a new password", url: p.url }, esc(footer)),
     text: `Hello ${p.firstName},\n\n${intro}\n\nChoose a new password: ${p.url}\n\n${expiry}\n\n${footer}`,
   };

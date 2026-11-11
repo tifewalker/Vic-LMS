@@ -2,7 +2,7 @@
 
 1. INTRODUCTION
 
-Victory Entrepreneurship Centre requires a simple and organised digital platform to manage its training programmes, learners, instructors, learning materials, assignments, assessments and general training activities.
+Crystal Entrepreneurship Centre requires a simple and organised digital platform to manage its training programmes, learners, instructors, learning materials, assignments, assessments and general training activities.
 
 The proposed solution is a custom-built Training Management Platform designed to make it easier for the Centre to manage its training operations while giving learners and instructors a central place to access relevant programme information and carry out their responsibilities.
 
@@ -40,7 +40,7 @@ Provide administrators with an overview of training activities and basic reports
 
 3.1 Public Website and Learner Registration
 
-The platform will include a public-facing website that introduces Victory Entrepreneurship Centre and provides information about its training programmes.
+The platform will include a public-facing website that introduces Crystal Entrepreneurship Centre and provides information about its training programmes.
 
 Key features include:
 

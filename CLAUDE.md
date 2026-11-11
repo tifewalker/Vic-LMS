@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project: website and Training Management Platform (LMS) for Victory Entrepreneurship Centre, starting with the public site for the OAUSTECH Entrepreneurship, ICT, Digital Skills and Emerging Technologies Training Programme (26 weeks, Okitipupa, Ondo State).
+Project: website and Training Management Platform (LMS) for Crystal Entrepreneurship Centre, starting with the public site for the OAUSTECH Entrepreneurship, ICT, Digital Skills and Emerging Technologies Training Programme (26 weeks, Okitipupa, Ondo State).
 
 Read these first:
 - `docs/scope-v2.md`: the ten modules, exclusions and roles (student, tutor, admin, super_admin). Supersedes the module list in `features.md`.
@@ -93,10 +93,10 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 ## Branding and images
 
 ### Branding: both brands, side by side
-- OAUSTECH is the host institution. Victory Entrepreneurship Centre runs the programme.
-- **Header:** OAUSTECH logo and the Victory Entrepreneurship Centre name side by side, separated by a thin vertical rule (1px `--line`).
-- **Footer:** include the line "Delivered by Victory Entrepreneurship Centre in partnership with OAUSTECH".
-- There is no Victory Entrepreneurship Centre logo yet. Set the name in the heading serif as a wordmark and keep a `TODO(content):` for the real logo until the client supplies one.
+- OAUSTECH is the host institution. Crystal Entrepreneurship Centre runs the programme.
+- **Header:** OAUSTECH logo and the Crystal Entrepreneurship Centre name side by side, separated by a thin vertical rule (1px `--line`).
+- **Footer:** include the line "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH".
+- There is no Crystal Entrepreneurship Centre logo yet. Set the name in the heading serif as a wordmark and keep a `TODO(content):` for the real logo until the client supplies one.
 
 ### Images: real OAUSTECH images, self-hosted
 - Use real images from the OAUSTECH website, downloaded into `web/public/images/` and served with `next/image`. Never hotlink.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { brand } from "./lib/brand.js";
 
 const schema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
@@ -11,7 +12,7 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   RESEND_API_KEY: z.string().optional().transform((v) => v || undefined),
   // Only used when RESEND_API_KEY is set. resend.dev only delivers to your own Resend account address.
-  EMAIL_FROM: z.string().min(3).default("Victory Entrepreneurship Centre <onboarding@resend.dev>"),
+  EMAIL_FROM: z.string().min(3).default(`${brand.operator} <onboarding@resend.dev>`),
   EMAIL_DAILY_LIMIT: z.coerce.number().int().min(0).default(90),
 });
 

@@ -1,3 +1,4 @@
+import { partnershipLine } from "@/lib/site";
 /**
  * Landing page copy as typed data.
  * Source of truth: content/landing-copy.md (approved copy). Do not edit wording here
@@ -440,7 +441,7 @@ export const contact = {
   enquiriesLabel: "Programme Enquiries",
   formLabel: "Application Form",
   websiteLabel: "Official University Website",
-  partnershipLine: "Delivered by Victory Entrepreneurship Centre in partnership with OAUSTECH",
+  partnershipLine,
   // Not rendered: the copy's closing note says application dates, fees, certificate arrangements,
   // available tracks and final schedules must be confirmed before publication.
   // TODO(content): add dates, fees and schedules only once organisers confirm them.

@@ -10,9 +10,14 @@ export const site = {
   name: "OAUSTECH Entrepreneurship, ICT, Digital Skills & Emerging Technologies Training Programme",
   shortName: "OAUSTECH Training Programme",
 
+  /**
+   * The organisation that runs the programme. The API keeps a copy of these
+   * strings in api/src/lib/brand.ts; a test there fails if the two drift apart.
+   */
   operator: {
-    name: "Victory Entrepreneurship Centre",
-    /** TODO(content): Victory Entrepreneurship Centre logo not supplied yet. Wordmark is used until then. */
+    name: "Crystal Entrepreneurship Centre",
+    shortName: "CEC",
+    /** TODO(content): Crystal Entrepreneurship Centre logo not supplied yet. Wordmark is used until then. */
     logo: null as string | null,
   },
 
@@ -36,5 +41,8 @@ export const site = {
   /** Google Form for now. Swap for the in-platform form in a later phase. */
   applicationFormUrl: "https://forms.gle/DKMJPQvVLbwWSsbeA",
 } as const;
+
+/** "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH" */
+export const partnershipLine = `Delivered by ${site.operator.name} in partnership with ${site.institution.shortName}`;
 
 export type Site = typeof site;

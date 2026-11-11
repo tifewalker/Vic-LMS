@@ -1,4 +1,4 @@
-# Feature Study: Victory Entrepreneurship Centre Training Platform
+# Feature Study: Crystal Entrepreneurship Centre Training Platform
 
 Source: `docs/proposal.md` (the client proposal). This file turns it into something we can build against.
 
@@ -110,7 +110,7 @@ Access rule of thumb: tutors see rows where they are in `batch_tutors`, students
 
 ## 6. Questions for the client
 
-- Whose brand leads the public site: Victory Entrepreneurship Centre, OAUSTECH, or both side by side? Do we have logos?
+- Whose brand leads the public site: Crystal Entrepreneurship Centre, OAUSTECH, or both side by side? Do we have logos?
 - Do we have real photos of the campus and past sessions? (Big difference to the design.)
 - Application dates, fees, certificate details and final tracks: the copy says these still need confirming.
 - Keep the Google Form for now, or switch straight to the in-platform form?

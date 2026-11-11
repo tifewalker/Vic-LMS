@@ -1,4 +1,4 @@
-# Scope v2: Victory Entrepreneurship Centre Training Platform
+# Scope v2: Crystal Entrepreneurship Centre Training Platform
 
 Supersedes the module list in `docs/features.md` where they differ. `features.md` still holds the data model draft and the original module notes.
 
