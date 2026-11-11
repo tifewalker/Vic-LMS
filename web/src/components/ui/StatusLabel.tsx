@@ -41,6 +41,10 @@ const statuses: Record<string, { label: string; tone: Tone }> = {
   pinned: { label: "Pinned", tone: "clay" },
   tutor: { label: "Tutor", tone: "ink" },
   released: { label: "Released", tone: "sage" },
+  // moderation
+  hidden: { label: "Hidden", tone: "neutral" },
+  muted: { label: "Muted", tone: "clay" },
+  admin: { label: "Admin", tone: "ink" },
   unreleased: { label: "Not released", tone: "neutral" },
 };
 

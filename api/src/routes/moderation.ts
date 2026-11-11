@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { idParam, isAdmin, zodMessage } from "../lib/access.js";
 import { broadcast, isLive, logModeration } from "../lib/moderation.js";
-import { liveClasses, ungradedCount, unansweredCount } from "../lib/nav.js";
+import { liveClasses, ungradedCount, unansweredCounts } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 
@@ -13,13 +13,13 @@ import { admin } from "../supabase.js";
 export const moderationRouter = Router();
 moderationRouter.use(requireAuth, requireRole("admin", "super_admin"));
 
-type People = Record<string, { full_name: string; role: string }>;
+type People = Record<string, { full_name: string; role: string; chat_muted: boolean }>;
 
 async function peopleById(ids: (string | null | undefined)[]): Promise<People> {
   const unique = [...new Set(ids.filter((v): v is string => !!v))];
   if (!unique.length) return {};
-  const { data } = await admin.from("profiles").select("id, full_name, role").in("id", unique);
-  return Object.fromEntries((data ?? []).map((p) => [p.id, { full_name: p.full_name, role: p.role }]));
+  const { data } = await admin.from("profiles").select("id, full_name, role, chat_muted").in("id", unique);
+  return Object.fromEntries((data ?? []).map((p) => [p.id, { full_name: p.full_name, role: p.role, chat_muted: p.chat_muted }]));
 }
 
 /** PostgREST embeds come back as an object or a one-item array depending on the relation. */
@@ -411,6 +411,6 @@ moderationRouter.get("/reports", async (_req, res) => {
 
 moderationRouter.get("/nav", async (req, res) => {
   if (!isAdmin(req.profile!)) return res.status(403).json({ error: "You do not have access to this." });
-  const [live, unanswered, ungraded] = await Promise.all([liveClasses(null), unansweredCount(null), ungradedCount(null)]);
-  res.json({ live, unanswered, ungraded });
+  const [live, unanswered, ungraded] = await Promise.all([liveClasses(null), unansweredCounts(null), ungradedCount(null)]);
+  res.json({ live, unanswered_live: unanswered.live, unanswered_threads: unanswered.threads, ungraded });
 });

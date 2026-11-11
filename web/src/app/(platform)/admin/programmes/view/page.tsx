@@ -14,6 +14,7 @@ import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Notice } from "@/components/ui/Notice";
+import { AdminBreadcrumbs } from "@/components/ui/Breadcrumbs";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonPage } from "@/components/ui/Skeleton";
 import { StatusLabel } from "@/components/ui/StatusLabel";
@@ -79,6 +80,7 @@ function ProgrammeView() {
 
   return (
     <>
+      <AdminBreadcrumbs items={[{ label: "Programmes", href: "/admin/programmes/" }, { label: data.programme.title }]} />
       <PageHeader
         kicker="Programme"
         title={data.programme.title}

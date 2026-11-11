@@ -27,6 +27,14 @@ const messageBody = z.object({
   is_question: z.boolean().default(false),
 });
 
+/** For admins: which of these authors are muted, so the page can offer Unmute. */
+async function mutedAmong(ids: string[]): Promise<string[]> {
+  const unique = [...new Set(ids)];
+  if (!unique.length) return [];
+  const { data } = await admin.from("profiles").select("id").in("id", unique).eq("chat_muted", true);
+  return (data ?? []).map((p) => p.id);
+}
+
 async function threadProgramme(threadId: string) {
   const { data } = await admin.from("threads").select("id, programme_id, hidden").eq("id", threadId).maybeSingle();
   return data;
@@ -94,7 +102,14 @@ export function registerCommunityRoutes(router: Router) {
       rq,
     ]);
     if (!thread || (thread.hidden && !seesHidden)) return res.status(404).json({ error: "This thread is no longer available." });
-    res.json({ thread, replies: replies ?? [], muted: req.profile!.chat_muted && !seesHidden });
+    const authorIds = [thread.author_id, ...(replies ?? []).map((r) => r.author_id)];
+    const [muted_ids, { data: profiles }] = await Promise.all([
+      seesHidden ? mutedAmong(authorIds) : Promise.resolve([]),
+      admin.from("profiles").select("id, full_name, role").in("id", [...new Set(authorIds)]),
+    ]);
+    // Names for everyone in the thread, so pages outside the programme (admin discussions) can show them.
+    const authors = Object.fromEntries((profiles ?? []).map((p) => [p.id, { full_name: p.full_name, role: p.role }]));
+    res.json({ thread, replies: replies ?? [], muted: req.profile!.chat_muted && !seesHidden, muted_ids, authors });
   });
 
   router.post("/threads/:id/replies", async (req, res) => {
@@ -149,7 +164,8 @@ export function registerCommunityRoutes(router: Router) {
     let q = admin.from("live_messages").select(MESSAGE_COLUMNS).eq("class_id", id).order("created_at").limit(500);
     if (!seesHidden) q = q.eq("hidden", false);
     const { data } = await q;
-    res.json({ messages: data ?? [], muted: req.profile!.chat_muted && !seesHidden });
+    const muted_ids = seesHidden ? await mutedAmong((data ?? []).map((m) => m.author_id)) : [];
+    res.json({ messages: data ?? [], muted: req.profile!.chat_muted && !seesHidden, muted_ids });
   });
 
   router.post("/classes/:id/messages", async (req, res) => {

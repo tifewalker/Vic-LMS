@@ -14,6 +14,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { controlClass, TextField } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
+import { AdminBreadcrumbs } from "@/components/ui/Breadcrumbs";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkeletonPage } from "@/components/ui/Skeleton";
 import { StatusLabel } from "@/components/ui/StatusLabel";
@@ -98,6 +99,13 @@ function ClassPage() {
 
   return (
     <>
+      <AdminBreadcrumbs
+        items={[
+          { label: "Programmes", href: "/admin/programmes/" },
+          { label: c.programme?.title ?? "Programme", href: `/admin/programmes/view/?id=${c.programme_id}` },
+          { label: c.title },
+        ]}
+      />
       <PageHeader
         kicker={c.programme?.title}
         title={c.title}

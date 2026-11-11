@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMe } from "@/components/platform/RequireRole";
 import { ButtonLink } from "@/components/ui/Button";
+import { useNavData } from "@/components/ui/NavData";
 import { Notice } from "@/components/ui/Notice";
 import { PageHeader, SectionTitle } from "@/components/ui/PageHeader";
 import { Stats } from "@/components/ui/Stats";
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
   const me = useMe();
   const [s, setS] = useState<Summary | null>(null);
   const [error, setError] = useState("");
+  const { data: nav } = useNavData();
 
   useEffect(() => {
     api<Summary>("/admin/summary").then((res) => (res.ok ? setS(res.data) : setError(res.error)));
@@ -47,7 +49,21 @@ export default function AdminDashboard() {
       />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
 
-      <section className="mt-8" aria-labelledby="teaching-title">
+      <section className="mt-8" aria-labelledby="now-title">
+        <SectionTitle id="now-title">Right now</SectionTitle>
+        <div className="mt-4">
+          <Stats
+            label="Right now"
+            items={[
+              { label: "Live now", value: nav.loaded ? nav.live.length : null, href: "/admin/live/" },
+              { label: "Unanswered questions", value: nav.loaded ? nav.unanswered_live + nav.unanswered_threads : null, href: nav.unanswered_live || !nav.unanswered_threads ? "/admin/live/" : "/admin/discussions/" },
+              { label: "Ungraded submissions", value: nav.loaded ? nav.ungraded : null, href: "/admin/assessments/" },
+            ]}
+          />
+        </div>
+      </section>
+
+      <section className="mt-12" aria-labelledby="teaching-title">
         <SectionTitle id="teaching-title">Teaching</SectionTitle>
         <div className="mt-4">
           <Stats

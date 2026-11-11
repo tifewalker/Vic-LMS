@@ -30,9 +30,9 @@ export async function liveClasses(programmeIds: string[] | null): Promise<LiveCl
     .map(({ id, title, programme_id }) => ({ id, title, programme_id }));
 }
 
-/** Open live questions plus open question threads, not hidden. */
-export async function unansweredCount(programmeIds: string[] | null): Promise<number> {
-  if (programmeIds && !programmeIds.length) return 0;
+/** Open live questions and open question threads, not hidden. */
+export async function unansweredCounts(programmeIds: string[] | null): Promise<{ live: number; threads: number }> {
+  if (programmeIds && !programmeIds.length) return { live: 0, threads: 0 };
   let live = admin
     .from("live_messages")
     .select("id, class:classes!inner(programme_id)", { count: "exact", head: true })
@@ -50,7 +50,7 @@ export async function unansweredCount(programmeIds: string[] | null): Promise<nu
     threads = threads.in("programme_id", programmeIds);
   }
   const [a, b] = await Promise.all([live, threads]);
-  return (a.count ?? 0) + (b.count ?? 0);
+  return { live: a.count ?? 0, threads: b.count ?? 0 };
 }
 
 /** Handed-in work waiting for a grade (digital submissions and paper received). */

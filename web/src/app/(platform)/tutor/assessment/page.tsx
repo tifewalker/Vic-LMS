@@ -8,6 +8,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextArea, TextField } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
+import { AdminBreadcrumbs } from "@/components/ui/Breadcrumbs";
 import { PageHeader, SectionTitle } from "@/components/ui/PageHeader";
 import { SkeletonPage } from "@/components/ui/Skeleton";
 import { Stats } from "@/components/ui/Stats";
@@ -92,6 +93,13 @@ function TutorAssessment() {
 
   return (
     <>
+      <AdminBreadcrumbs
+        items={[
+          { label: "Programmes", href: "/admin/programmes/" },
+          { label: data.programme.title, href: `/admin/programmes/view/?id=${data.programme.id}` },
+          { label: a.title },
+        ]}
+      />
       <PageHeader
         kicker={data.programme.title}
         title={a.title}
