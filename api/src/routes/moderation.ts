@@ -374,6 +374,39 @@ moderationRouter.get("/activity", async (req, res) => {
   });
 });
 
+/* Reports: one row per programme --------------------------------------------------------------- */
+
+moderationRouter.get("/reports", async (_req, res) => {
+  const now = new Date().toISOString();
+  const [{ data: programmes }, { data: students }, { data: tutors }, { data: classes }, { data: assessments }, { data: subs }, { data: questions }] = await Promise.all([
+    admin.from("programmes").select("id, title, is_active").order("title"),
+    admin.from("programme_students").select("programme_id"),
+    admin.from("programme_tutors").select("programme_id"),
+    admin.from("classes").select("programme_id, ends_at"),
+    admin.from("assessments").select("id, programme_id, published"),
+    admin.from("submissions").select("status, assessment:assessments!inner(programme_id), grade:grades(released)"),
+    admin.from("threads").select("programme_id").eq("kind", "question").eq("answered", false).eq("hidden", false),
+  ]);
+  const count = <T>(rows: T[] | null, f: (r: T) => boolean) => (rows ?? []).filter(f).length;
+  res.json({
+    programmes: (programmes ?? []).map((p) => {
+      const mySubs = (subs ?? []).filter((s) => one<{ programme_id: string }>(s.assessment)?.programme_id === p.id);
+      return {
+        ...p,
+        students: count(students, (r) => r.programme_id === p.id),
+        tutors: count(tutors, (r) => r.programme_id === p.id),
+        classes_total: count(classes, (r) => r.programme_id === p.id),
+        classes_held: count(classes, (r) => r.programme_id === p.id && r.ends_at < now),
+        assessments: count(assessments, (r) => r.programme_id === p.id && r.published),
+        handed_in: mySubs.length,
+        to_grade: mySubs.filter((s) => s.status !== "graded").length,
+        released: mySubs.filter((s) => one<{ released: boolean }>(s.grade)?.released).length,
+        open_questions: count(questions, (r) => r.programme_id === p.id),
+      };
+    }),
+  });
+});
+
 /* Sidebar and dashboard counts ------------------------------------------------------------------- */
 
 moderationRouter.get("/nav", async (req, res) => {

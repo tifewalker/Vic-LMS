@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ASSESSMENT_COLUMNS, canTeach, CLASS_COLUMNS, idParam, isAdmin, programmeAccess, programmePeople, zodMessage } from "../lib/access.js";
 import { assessmentPrefix, fileExists, fileMeta, signedDownload, signedUpload } from "../lib/files.js";
 import { embed } from "../lib/invites.js";
+import { isLive } from "../lib/moderation.js";
 import { liveClasses, tutorProgrammeIds, ungradedCount, unansweredCount } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
@@ -316,6 +317,90 @@ teachRouter.post("/assessments/:id/release", async (req, res) => {
     released = data?.length ?? 0;
   }
   res.json({ released });
+});
+
+/* Cross-programme lists for the sidebar pages. Admins see every programme. */
+async function scope(req: Request): Promise<string[] | null> {
+  return isAdmin(req.profile!) ? null : await tutorProgrammeIds(req.profile!.id);
+}
+
+/** Every class in my programmes, newest first, with the programme title and live state. */
+teachRouter.get("/classes", async (req, res) => {
+  const ids = await scope(req);
+  if (ids && !ids.length) return res.json({ classes: [] });
+  let q = admin.from("classes").select(`${CLASS_COLUMNS}, programme:programmes(title)`).order("starts_at", { ascending: false }).limit(300);
+  if (ids) q = q.in("programme_id", ids);
+  const { data } = await q;
+  res.json({ classes: (data ?? []).map(({ programme, ...c }) => ({ ...c, programme_title: embed<{ title: string }>(programme)?.title ?? "", live: isLive(c) })) });
+});
+
+/** Assessments with hand-in and grading counts. ?to_grade=1 keeps only those with work waiting. */
+teachRouter.get("/assessments", async (req, res) => {
+  const ids = await scope(req);
+  if (ids && !ids.length) return res.json({ assessments: [] });
+  let q = admin
+    .from("assessments")
+    .select(`${ASSESSMENT_COLUMNS}, programme:programmes(title), submissions(status)`)
+    .order("due_at", { ascending: false, nullsFirst: false })
+    .limit(300);
+  if (ids) q = q.in("programme_id", ids);
+  const { data } = await q;
+  const rows = (data ?? []).map(({ submissions, programme, ...a }) => {
+    const subs = (submissions ?? []) as { status: string }[];
+    return {
+      ...a,
+      programme_title: embed<{ title: string }>(programme)?.title ?? "",
+      handed_in: subs.length,
+      to_grade: subs.filter((s) => s.status !== "graded").length,
+    };
+  });
+  res.json({ assessments: req.query.to_grade === "1" ? rows.filter((r) => r.to_grade > 0) : rows });
+});
+
+/** Threads across my programmes, hidden ones left out. ?filter=unanswered|pinned */
+teachRouter.get("/threads", async (req, res) => {
+  const ids = await scope(req);
+  if (ids && !ids.length) return res.json({ threads: [] });
+  let q = admin
+    .from("threads")
+    .select("id, programme_id, class_id, author_id, kind, title, pinned, answered, created_at, replies(count), programme:programmes(title), author:profiles!threads_author_id_fkey(full_name, role)")
+    .eq("hidden", false)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (ids) q = q.in("programme_id", ids);
+  if (req.query.filter === "unanswered") q = q.eq("kind", "question").eq("answered", false);
+  if (req.query.filter === "pinned") q = q.eq("pinned", true);
+  const { data, error } = await q;
+  if (error) return res.status(500).json({ error: "Could not load discussions." });
+  res.json({
+    threads: data.map(({ replies, programme, author, ...t }) => ({
+      ...t,
+      reply_count: (replies as unknown as { count: number }[])[0]?.count ?? 0,
+      programme_title: embed<{ title: string }>(programme)?.title ?? "",
+      author: embed<{ full_name: string; role: string }>(author) ?? null,
+    })),
+  });
+});
+
+/** Announcements across my programmes. */
+teachRouter.get("/announcements", async (req, res) => {
+  const ids = await scope(req);
+  if (ids && !ids.length) return res.json({ announcements: [] });
+  let q = admin
+    .from("announcements")
+    .select("id, programme_id, class_id, title, body, pinned, created_at, programme:programmes(title), author:profiles(full_name)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (ids) q = q.in("programme_id", ids);
+  const { data, error } = await q;
+  if (error) return res.status(500).json({ error: "Could not load announcements." });
+  res.json({
+    announcements: data.map(({ programme, author, ...a }) => ({
+      ...a,
+      programme_title: embed<{ title: string }>(programme)?.title ?? "",
+      author_name: embed<{ full_name: string }>(author)?.full_name ?? null,
+    })),
+  });
 });
 
 /* Sidebar counts for tutors: live classes, unanswered questions, work to grade. */

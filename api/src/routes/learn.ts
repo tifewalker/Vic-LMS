@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ASSESSMENT_COLUMNS, CLASS_COLUMNS, idParam, programmeAccess, programmePeople } from "../lib/access.js";
 import { fileExists, fileMeta, signedDownload, signedUpload, submissionPrefix } from "../lib/files.js";
 import { embed } from "../lib/invites.js";
+import { isLive } from "../lib/moderation.js";
 import { dueCount, liveClasses, studentProgrammeIds } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
@@ -208,6 +209,69 @@ learnRouter.get("/assessments/:id/my-file", async (req, res) => {
   const url = sub?.file_path ? await signedDownload(sub.file_path) : null;
   if (!url) return res.status(404).json({ error: "No file submitted." });
   res.json({ url });
+});
+
+/* Cross-programme lists for the sidebar pages */
+const titleOf = (v: unknown) => ((Array.isArray(v) ? v[0] : v) as { title: string } | null)?.title ?? "";
+
+learnRouter.get("/classes", async (req, res) => {
+  const ids = await studentProgrammeIds(req.profile!.id);
+  if (!ids.length) return res.json({ classes: [] });
+  const { data } = await admin
+    .from("classes")
+    .select(`${CLASS_COLUMNS}, programme:programmes(title)`)
+    .in("programme_id", ids)
+    .order("starts_at", { ascending: false })
+    .limit(300);
+  res.json({ classes: (data ?? []).map(({ programme, ...c }) => ({ ...c, programme_title: titleOf(programme), live: isLive(c) })) });
+});
+
+learnRouter.get("/assessments", async (req, res) => {
+  const ids = await studentProgrammeIds(req.profile!.id);
+  if (!ids.length) return res.json({ assessments: [] });
+  const { data } = await admin
+    .from("assessments")
+    .select(`${ASSESSMENT_COLUMNS}, programme:programmes(title)`)
+    .in("programme_id", ids)
+    .eq("published", true)
+    .order("due_at", { ascending: true, nullsFirst: false });
+  const rows = await withMine(req.profile!.id, data ?? []);
+  res.json({ assessments: rows.map(({ programme, ...a }) => ({ ...a, programme_title: titleOf(programme) })) });
+});
+
+/** Per programme: classes held and each assessment with my status and released grade. */
+learnRouter.get("/progress", async (req, res) => {
+  const me = req.profile!.id;
+  const ids = await studentProgrammeIds(me);
+  if (!ids.length) return res.json({ programmes: [] });
+  const now = new Date().toISOString();
+  const [{ data: programmes }, { data: assessments }, { data: classes }] = await Promise.all([
+    admin.from("programmes").select("id, title").in("id", ids).order("title"),
+    admin.from("assessments").select(ASSESSMENT_COLUMNS).in("programme_id", ids).eq("published", true).order("due_at", { nullsFirst: false }),
+    admin.from("classes").select("id, programme_id, ends_at").in("programme_id", ids),
+  ]);
+  type Mine = { status: string; grade: { score: number; feedback: string; graded_at: string } | null } | null;
+  const all = await withMine(me, assessments ?? []);
+  res.json({
+    programmes: (programmes ?? []).map((p) => {
+      const mine = all.filter((a) => a.programme_id === p.id);
+      const cls = (classes ?? []).filter((c) => c.programme_id === p.id);
+      return {
+        ...p,
+        classes_total: cls.length,
+        classes_held: cls.filter((c) => c.ends_at < now).length,
+        assessments: mine.map((a) => ({
+          id: a.id,
+          title: a.title,
+          due_at: a.due_at,
+          max_score: a.max_score,
+          mode: a.mode,
+          status: (a.my_submission as Mine)?.status ?? null,
+          grade: (a.my_submission as Mine)?.grade ?? null,
+        })),
+      };
+    }),
+  });
 });
 
 /* Sidebar counts for students: live classes and assessments still to hand in. */
