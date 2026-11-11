@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { cx } from "@/lib/cx";
 
 /**
@@ -56,6 +56,47 @@ export function TextField({
         aria-describedby={describedBy(id, hint, error)}
         className={cx(controlClass, "h-11")}
       />
+    </Shell>
+  );
+}
+
+/** Password input with a show/hide toggle (an outline eye, no filled icon). */
+export function PasswordField({
+  label,
+  hint,
+  error,
+  optional,
+  className,
+  ...input
+}: ShellProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
+  const id = useId();
+  const [visible, setVisible] = useState(false);
+  return (
+    <Shell id={id} label={label} hint={hint} error={error} optional={optional} className={className}>
+      <div className="relative">
+        <input
+          id={id}
+          {...input}
+          type={visible ? "text" : "password"}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(id, hint, error)}
+          className={cx(controlClass, "h-11 pr-12")}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+          aria-controls={id}
+          className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-sm text-ink-muted hover:text-ink"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+            {visible ? <path d="M4 4l16 16" /> : null}
+          </svg>
+        </button>
+      </div>
     </Shell>
   );
 }

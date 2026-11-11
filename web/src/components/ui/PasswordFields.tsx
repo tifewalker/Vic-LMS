@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { passwordRules } from "@/lib/password";
-import { TextField } from "./Field";
+import { PasswordField } from "./Field";
 
 /** New password and confirm, with the strength rules ticking off as you type. */
 export function PasswordFields({ onChange }: { onChange: (value: string | null) => void }) {
@@ -19,7 +19,7 @@ export function PasswordFields({ onChange }: { onChange: (value: string | null) 
   return (
     <div className="space-y-6">
       <div>
-        <TextField label="New password" type="password" autoComplete="new-password" required value={password} onChange={(e) => update(e.target.value, confirm)} />
+        <PasswordField label="New password" autoComplete="new-password" required value={password} onChange={(e) => update(e.target.value, confirm)} />
         <ul className="mt-3 space-y-1 text-ui-xs" aria-label="Password rules">
           {passwordRules.map((r) => {
             const met = r.test(password);
@@ -33,9 +33,8 @@ export function PasswordFields({ onChange }: { onChange: (value: string | null) 
           })}
         </ul>
       </div>
-      <TextField
+      <PasswordField
         label="Confirm password"
-        type="password"
         autoComplete="new-password"
         required
         value={confirm}

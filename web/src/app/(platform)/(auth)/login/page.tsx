@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/Field";
+import { PasswordField, TextField } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
 import { api, homeFor, type Role } from "@/lib/api";
 import { storeSession } from "@/lib/supabase";
@@ -39,7 +39,7 @@ export default function LoginPage() {
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <TextField label="Email, matric number or tutor ID" name="identifier" autoComplete="username" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
-        <TextField label="Password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordField label="Password" name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Button type="submit" loading={busy} loadingText="Signing in…" disabled={!identifier || !password}>
             Sign in
