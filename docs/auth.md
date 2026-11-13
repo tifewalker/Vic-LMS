@@ -7,13 +7,15 @@ Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 - **students**: profile_id, matric_no (unique, trimmed, uppercase)
 - **tutors**: profile_id, tutor_id (unique, VEC-TUT-0001 from a sequence)
 - **invitations**: id, profile_id, token_hash, expires_at, used_at, status (pending | sent | activated | expired), attempts, last_sent_at, created_at
-- **email_log**: every email the API sends, for the daily limit
+- **email_log**: every email the API tries to send, with its outcome (sent, failed, bounced), for the daily cap
+- **email_queue**: emails other than activation waiting for the cap (password resets)
 - RLS: users read their own profile and role record; admins read everything; token hashes are never readable from the browser. All writes go through the API.
 
 ## Invitation tokens
 - 32 random bytes, base64url, in the link `{WEB_URL}/activate/?token=...`. Only the SHA-256 hash is stored.
 - Created when the email is sent; expires 72 hours later; single use.
-- Resend writes a new hash, so the old link stops working.
+- Resend writes a new hash once the new email has gone, so the old link stops working then (it keeps working while the new one is queued).
+- `POST /auth/request-activation` (from `/activate-account/`) queues a new link for an account that is not active yet. Same reply whether or not the account exists.
 - Invalid or expired links show one message: "This link is no longer valid. Ask the admin to send a new one."
 
 ## API
@@ -27,7 +29,7 @@ Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 | `GET /admin/summary` | Dashboard numbers. |
 | `POST /admin/students/import` | Validated rows; per-row created, skipped and errors; then sends invites within today's limit. |
 | `POST /admin/invitations/send-pending` | Sends pending invites within today's limit. |
-| `POST /admin/invitations/:id/resend` | New token; queued as pending if today's limit is used up. |
+| `POST /admin/invitations/:id/resend` | New token; queued as pending if today's cap or the per-minute rate is used up, then sent automatically. |
 | `POST /admin/tutors` | Creates a tutor with a generated tutor ID and sends the invite. |
 | `POST /admin/admins` | super_admin only. |
 | `GET /admin/users?role=&status=&q=&page=` | Paginated, with invite status, attempts and last sent time. |

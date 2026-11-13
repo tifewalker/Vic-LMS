@@ -3,8 +3,9 @@ import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { createInvitedAccount, existingEmails, existingMatrics } from "../lib/accounts.js";
 import { emailsRemainingToday } from "../lib/email.js";
+import { drainOutbox, emailStatus, queueInvite } from "../lib/outbox.js";
 import { normaliseEmail } from "../lib/identifier.js";
-import { one, sendOrQueue, sendPendingInvites } from "../lib/invites.js";
+import { one } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
@@ -24,7 +25,7 @@ adminRouter.get("/summary", async (_req, res) => {
     const { count } = await q;
     return count ?? 0;
   };
-  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, programmes, notEnrolled, upcomingClasses] = await Promise.all([
+  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, programmes, notEnrolled, upcomingClasses, email] = await Promise.all([
     count("profiles", ["role", "student"]),
     count("profiles", ["role", "tutor"]),
     count("profiles", ["status", "invited"]),
@@ -39,6 +40,7 @@ adminRouter.get("/summary", async (_req, res) => {
       .select("*", { count: "exact", head: true })
       .gte("ends_at", new Date().toISOString())
       .then((r) => r.count ?? 0),
+    emailStatus(),
   ]);
   res.json({
     students,
@@ -51,6 +53,7 @@ adminRouter.get("/summary", async (_req, res) => {
     programmes,
     studentsNotEnrolled: notEnrolled,
     upcomingClasses,
+    email,
   });
 });
 
@@ -103,24 +106,24 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     const { error: logError } = await admin.from("import_log").insert({ admin_id: req.profile!.id, created_count: created });
     if (logError) console.error("import_log insert failed", logError.message);
   }
-  const invites = await sendPendingInvites();
+  const invites = await drainOutbox();
   res.json({ created, skipped, errors, invites, enrolled });
 });
 
 /* POST /admin/invitations/send-pending */
 adminRouter.post("/invitations/send-pending", async (_req, res) => {
-  res.json(await sendPendingInvites());
+  res.json(await drainOutbox());
 });
 
 /* POST /admin/invitations/:id/resend: new token, the old link stops working */
 adminRouter.post("/invitations/:id/resend", async (req, res) => {
   const id = z.uuid().safeParse(req.params.id);
   if (!id.success) return res.status(404).json({ error: "Invitation not found." });
-  const result = await sendOrQueue(id.data);
-  if (result === "failed") return res.status(400).json({ error: "This invitation cannot be sent. It may already be activated." });
+  const result = await queueInvite(id.data);
+  if (!result) return res.status(400).json({ error: "This invitation cannot be sent. It may already be activated." });
   res.json({
     status: result,
-    message: result === "sent" ? "Invite sent." : "Today's email limit is reached. The invite is queued; use Send pending invites tomorrow.",
+    message: result === "sent" ? "Invite sent." : "The invite is queued. It goes out automatically once the email limits allow.",
   });
 });
 
@@ -135,7 +138,7 @@ async function createAndInvite(role: "tutor" | "admin", input: z.infer<typeof pe
   if (taken.size) return { status: 409, body: { error: "An account with this email already exists." } };
   const result = await createInvitedAccount({ role, ...input });
   if (!result.ok) return { status: 400, body: { error: result.reason } };
-  const invite = await sendOrQueue(result.invitationId);
+  const invite = (await queueInvite(result.invitationId)) ?? "failed";
   return { status: 201, body: { id: result.profileId, tutor_id: result.tutor_id ?? null, invite } };
 }
 

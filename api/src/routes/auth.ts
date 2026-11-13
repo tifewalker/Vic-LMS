@@ -1,10 +1,11 @@
 import { Router, type RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
-import { env, webUrl } from "../env.js";
-import { emailsRemainingToday, firstName, resetEmail, sendEmail } from "../lib/email.js";
+import { env } from "../env.js";
+import { firstName } from "../lib/email.js";
 import { normaliseEmail, parseIdentifier } from "../lib/identifier.js";
 import { one } from "../lib/invites.js";
+import { queueInvite, queuePasswordReset } from "../lib/outbox.js";
 import { hashToken, looksLikeToken, passwordProblems } from "../lib/tokens.js";
 import { requireAuth } from "../middleware/auth.js";
 import { admin, anonClient } from "../supabase.js";
@@ -32,20 +33,20 @@ const loginByIdentifier = rateLimit({
 });
 
 /** Resolves an email, matric number or tutor ID to the account's email and status. */
-async function resolveIdentifier(raw: string): Promise<{ email: string; status: string } | null> {
+async function resolveIdentifier(raw: string): Promise<{ id: string; email: string; status: string } | null> {
   const id = parseIdentifier(raw);
   if (!id) return null;
   if (id.kind === "email") {
-    const { data } = await admin.from("profiles").select("email, status").eq("email", id.value).maybeSingle();
+    const { data } = await admin.from("profiles").select("id, email, status").eq("email", id.value).maybeSingle();
     return data;
   }
   const table = id.kind === "tutor_id" ? "tutors" : "students";
   const { data } = await admin
     .from(table)
-    .select("profile:profiles!inner(email, status)")
+    .select("profile:profiles!inner(id, email, status)")
     .eq(id.kind, id.value)
     .maybeSingle();
-  return data ? (one(data.profile) as { email: string; status: string } | null) : null;
+  return data ? (one(data.profile) as { id: string; email: string; status: string } | null) : null;
 }
 
 async function profileSummary(userId: string) {
@@ -82,7 +83,8 @@ async function findValidInvite(token: unknown): Promise<ValidInvite | null> {
     .select("id, profile_id, status, expires_at, used_at, profile:profiles!inner(full_name, email, status)")
     .eq("token_hash", hashToken(token))
     .maybeSingle();
-  if (!data || data.status !== "sent" || data.used_at) return null;
+  // 'pending' with a token: a new link is queued, and the one already sent keeps working until then.
+  if (!data || !["sent", "pending"].includes(data.status) || data.used_at) return null;
   if (!data.expires_at || new Date(data.expires_at) <= new Date()) {
     await admin.from("invitations").update({ status: "expired" }).eq("id", data.id).eq("status", "sent");
     return null;
@@ -168,16 +170,41 @@ authRouter.post("/forgot-password", byIp(10), forgotByEmail, async (req, res) =>
       .eq("email", email)
       .maybeSingle();
     if (!profile || profile.status !== "active") return;
-    if ((await emailsRemainingToday()) <= 0) {
-      console.warn("Daily email limit reached; password reset not sent to", email);
-      return;
-    }
-    const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
-    if (error || !data.properties?.hashed_token) return;
-    const url = `${webUrl}/reset-password/?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=recovery`;
-    await sendEmail(resetEmail({ to: email, firstName: firstName(profile.full_name), url }));
+    // Queued behind any activation emails; the link is created when it is sent.
+    await queuePasswordReset(email);
   } catch (err) {
     console.error("forgot-password failed", err);
+  }
+});
+
+/* POST /auth/request-activation: a new activation link for an account that is not active yet */
+const ACTIVATION_REPLY = "If that account is waiting to be activated, a new activation link is on its way to the email address it was registered with.";
+const requestByIdentifier = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 3 * LIMIT_FACTOR,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => `ra:${String(req.body?.identifier ?? "").trim().toLowerCase()}`,
+  // Same reply as success, so the limit does not reveal whether an account exists.
+  handler: (_req, res) => res.json({ message: ACTIVATION_REPLY }),
+});
+
+authRouter.post("/request-activation", byIp(10), requestByIdentifier, async (req, res) => {
+  const body = z.object({ identifier: z.string().min(1).max(200) }).safeParse(req.body);
+  res.json({ message: ACTIVATION_REPLY });
+  if (!body.success) return;
+  try {
+    const account = await resolveIdentifier(body.data.identifier);
+    if (!account || account.status !== "invited") return;
+    const { data: invite } = await admin
+      .from("invitations")
+      .select("id")
+      .eq("profile_id", account.id)
+      .neq("status", "activated")
+      .maybeSingle();
+    if (invite) await queueInvite(invite.id);
+  } catch (err) {
+    console.error("request-activation failed", err);
   }
 });
 

@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "seed:admin": "tsx --env-file-if-exists=.env src/scripts/seed-admin.ts"
+    "seed:admin": "tsx --env-file-if-exists=.env src/scripts/seed-admin.ts",
+    "email:test": "tsx --env-file-if-exists=.env src/scripts/email-test.ts"
   },
   "engines": {
     "node": ">=20.9 <25"
@@ -19,12 +20,14 @@
     "cors": "^2.8.6",
     "express": "^5.1.0",
     "express-rate-limit": "^8.7.4",
+    "nodemailer": "^10.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "22",
+    "@types/nodemailer": "^8.0.2",
     "tsx": "^4.23.15",
     "typescript": "^5"
   }

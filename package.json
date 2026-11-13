@@ -12,9 +12,14 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm --filter web lint",
     "test": "pnpm --filter api test",
-    "seed:admin": "pnpm --filter api seed:admin"
+    "seed:admin": "pnpm --filter api seed:admin",
+    "email:test": "pnpm --filter api email:test"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "unrs-resolver", "esbuild"]
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver",
+      "esbuild"
+    ]
   }
 }

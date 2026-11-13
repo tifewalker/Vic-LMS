@@ -1,6 +1,6 @@
 import { webUrl } from "../env.js";
 import { admin } from "../supabase.js";
-import { emailsRemainingToday, firstName, inviteEmail, sendEmail } from "./email.js";
+import { EmailError, firstName, inviteEmail, sendEmail } from "./email.js";
 import { INVITE_TTL_HOURS, newToken } from "./tokens.js";
 
 type InviteTarget = {
@@ -48,28 +48,12 @@ export async function loadInviteTarget(invitationId: string): Promise<InviteTarg
 }
 
 /**
- * Issues a fresh token and emails the link. Writing the new hash replaces the old one,
- * so any earlier link stops working. If sending fails the invitation goes back to pending.
+ * Emails a fresh link. The new token is saved only once the email has gone, so an earlier link
+ * keeps working if this send fails. After a bounce the invitation leaves the queue (status
+ * 'expired') until an admin fixes the address or resends it.
  */
-export async function sendInvite(t: InviteTarget): Promise<boolean> {
+export async function sendInvite(t: InviteTarget): Promise<"sent" | "bounced" | "failed"> {
   const { token, hash } = newToken();
-  const now = new Date();
-  const expires = new Date(now.getTime() + INVITE_TTL_HOURS * 3600 * 1000);
-
-  const { error } = await admin
-    .from("invitations")
-    .update({
-      token_hash: hash,
-      expires_at: expires.toISOString(),
-      used_at: null,
-      status: "sent",
-      attempts: t.attempts + 1,
-      last_sent_at: now.toISOString(),
-    })
-    .eq("id", t.invitationId)
-    .neq("status", "activated");
-  if (error) return false;
-
   const signInWith = t.matric_no
     ? `your email or your matric number ${t.matric_no}`
     : t.tutor_id
@@ -81,53 +65,34 @@ export async function sendInvite(t: InviteTarget): Promise<boolean> {
       inviteEmail({
         to: t.profile.email,
         firstName: firstName(t.profile.full_name),
-        url: `${webUrl}/activate/?token=${token}`,
+        url: `${webUrl}/activate-account/?token=${token}`,
         signInWith,
       }),
     );
-    return true;
   } catch (err) {
-    console.error("invite send failed", t.profile.email, err);
+    const bounced = err instanceof EmailError && err.bounced;
+    console.error(`invite ${bounced ? "bounced" : "send failed"}`, t.profile.email, err instanceof Error ? err.message : err);
     await admin
       .from("invitations")
-      .update({ status: "pending", token_hash: null, expires_at: null })
-      .eq("id", t.invitationId);
-    return false;
+      .update({ attempts: t.attempts + 1, ...(bounced ? { status: "expired" } : {}) })
+      .eq("id", t.invitationId)
+      .neq("status", "activated");
+    return bounced ? "bounced" : "failed";
   }
-}
 
-/** Sends one invitation now if today's limit allows; otherwise leaves it pending. */
-export async function sendOrQueue(invitationId: string): Promise<"sent" | "pending" | "failed"> {
-  const target = await loadInviteTarget(invitationId);
-  if (!target) return "failed";
-  if ((await emailsRemainingToday()) <= 0) {
-    await admin.from("invitations").update({ status: "pending" }).eq("id", invitationId).neq("status", "activated");
-    return "pending";
-  }
-  return (await sendInvite(target)) ? "sent" : "failed";
-}
-
-/** Sends pending invitations, oldest first, up to what is left of today's limit. */
-export async function sendPendingInvites(): Promise<{ sent: number; failed: number; stillPending: number }> {
-  const remaining = await emailsRemainingToday();
-  let sent = 0;
-  let failed = 0;
-  if (remaining > 0) {
-    const { data } = await admin
-      .from("invitations")
-      .select("id")
-      .eq("status", "pending")
-      .order("created_at", { ascending: true })
-      .limit(remaining);
-    for (const row of data ?? []) {
-      const target = await loadInviteTarget(row.id);
-      if (target && (await sendInvite(target))) sent++;
-      else failed++;
-    }
-  }
-  const { count } = await admin
+  const now = new Date();
+  const { error } = await admin
     .from("invitations")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
-  return { sent, failed, stillPending: count ?? 0 };
+    .update({
+      token_hash: hash,
+      expires_at: new Date(now.getTime() + INVITE_TTL_HOURS * 3600 * 1000).toISOString(),
+      used_at: null,
+      status: "sent",
+      attempts: t.attempts + 1,
+      last_sent_at: now.toISOString(),
+    })
+    .eq("id", t.invitationId)
+    .neq("status", "activated");
+  if (error) console.error("invitation update after send failed", t.invitationId, error.message);
+  return "sent";
 }
