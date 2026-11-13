@@ -18,7 +18,7 @@ Out of scope for the platform quote: the streaming setup ($500) and live-day sup
 | **Admin** | Review and approve applications, manage programmes and batches, assign students and tutors, post announcements and materials, see all records and reports |
 | **Tutor** | See only assigned batches and their students, post announcements and instructions, upload materials, create assignments, mark paper submissions, record scores and feedback, add live and replay links |
 | **Student** | See own programme and batch, read announcements and reply, download materials, submit assignments, see own scores and feedback, open live and replay links |
-| **Visitor** | Public site, programme info, apply |
+| **Visitor** | Public site, programme info, log in and account activation (applications closed) |
 
 ## 3. Modules (mapped to proposal sections)
 

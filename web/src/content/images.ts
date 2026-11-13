@@ -12,12 +12,13 @@ export type SiteImage = {
   alt: string;
   width: number;
   height: number;
+  /** A short description for our records. Never rendered: photos show no visible captions. */
   caption?: string;
   /** CSS object-position used when the frame crops the photo, e.g. "65% 50%". */
   objectPosition?: string;
   /** Where the image came from, for our records. Not rendered. */
   source?: string;
-  /** Photographer credit for licensed stock photos (listed on /photo-credits/ and in public/images/CREDITS.md). */
+  /** Photographer credit for licensed stock photos (kept for our records in public/images/CREDITS.md, not shown on the site). */
   credit?: { name: string; profile: string };
 };
 
@@ -156,5 +157,3 @@ export const galleryPhotos = {
   campus: images.campusGate,
 };
 
-/** Every licensed stock photo, for the credits page. */
-export const creditedPhotos: SiteImage[] = [...programmePhotos, droneInFlight, planning, computerLab];

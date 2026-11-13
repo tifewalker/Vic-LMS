@@ -70,10 +70,7 @@ export function TrainingAreas() {
                     <div className="col-start-2 grid gap-y-8 md:grid-cols-5 md:gap-x-8">
                       {photo ? (
                         // The photo sits beside the topics. On wide screens the side panel shows it instead.
-                        <figure className="md:col-span-2 lg:hidden">
-                          <Photo image={photo} sizes="(min-width: 768px) 30vw, 90vw" className="aspect-[4/5]" />
-                          <figcaption className="mt-2.5 text-[0.875rem] leading-snug text-ink-muted">{photo.caption}</figcaption>
-                        </figure>
+                        <Photo image={photo} sizes="(min-width: 768px) 30vw, 90vw" className="aspect-[4/5] md:col-span-2 lg:hidden" />
                       ) : null}
                       <div className="md:col-span-3 lg:col-span-5 lg:grid lg:grid-cols-9 lg:gap-x-8">
                         <div className="lg:col-span-5">
@@ -127,9 +124,6 @@ export function TrainingAreas() {
                 />
               ))}
             </div>
-            <p className="mt-2.5 text-[0.875rem] leading-snug text-ink-muted">
-              <span className="font-serif text-accent-strong tabular-nums">{pad(preview + 1)}</span> {programmePhotos[preview]?.caption}
-            </p>
           </div>
         </div>
       </div>

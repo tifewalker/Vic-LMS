@@ -29,11 +29,9 @@ export function SiteFooter() {
               </dd>
             </div>
             <div className="border-b border-line py-4">
-              <dt className="font-semibold">{contact.formLabel}</dt>
+              <dt className="font-semibold">{contact.platformLabel}</dt>
               <dd className="mt-1">
-                <TextLink href={site.applicationFormUrl} external className="break-all">
-                  {strip(site.applicationFormUrl)}
-                </TextLink>
+                <TextLink href={site.platform.login}>{contact.platformLinkLabel}</TextLink>
               </dd>
             </div>
             <div className="border-b border-line py-4">
@@ -49,11 +47,8 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line">
-        <div className="container-site flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 py-6 text-[0.9375rem] text-ink-muted">
+        <div className="container-site py-6 text-[0.9375rem] text-ink-muted">
           <p>{contact.partnershipLine}</p>
-          <a href="/photo-credits/" className="text-[0.875rem] underline decoration-line underline-offset-[0.22em] hover:text-ink hover:decoration-ink-muted">
-            Photo credits
-          </a>
         </div>
       </div>
     </footer>

@@ -4,7 +4,8 @@ import { cx } from "@/lib/cx";
 import { Section, SectionHeader } from "./Section";
 
 /**
- * "Programme in pictures": an asymmetric grid of photos with small captions.
+ * "Programme in pictures": an asymmetric grid of photos. No visible captions;
+ * each photo keeps a short alt text.
  * Square corners, hairline frames, no overlays or filters. Fixed aspect ratios, lazy loaded.
  */
 const tiles: { image: SiteImage; cell: string; aspect: string; sizes: string }[] = [
@@ -23,20 +24,17 @@ export function ProgrammePictures() {
       <ul className="mt-10 grid grid-cols-2 items-start gap-x-4 gap-y-8 md:mt-14 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-12">
         {tiles.map(({ image, cell, aspect, sizes }) => (
           <li key={image.src} className={cell}>
-            <figure>
-              <div className={cx("relative overflow-hidden border border-line bg-paper-2", aspect)}>
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  fill
-                  sizes={sizes}
-                  loading="lazy"
-                  className="object-cover"
-                  style={image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
-                />
-              </div>
-              <figcaption className="mt-2.5 text-[0.875rem] leading-snug text-ink-muted">{image.caption}</figcaption>
-            </figure>
+            <div className={cx("relative overflow-hidden border border-line bg-paper-2", aspect)}>
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                sizes={sizes}
+                loading="lazy"
+                className="object-cover"
+                style={image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
+              />
+            </div>
           </li>
         ))}
       </ul>

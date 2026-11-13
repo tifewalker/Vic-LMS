@@ -43,7 +43,6 @@ export function PhotoFigure({ image, aspect, sizes, placeholderCaption, preload,
           style={image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
         />
       </div>
-      {image.caption ? <figcaption className="mt-3 text-sm text-ink-muted">{image.caption}</figcaption> : null}
     </figure>
   );
 }

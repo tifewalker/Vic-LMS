@@ -4,7 +4,7 @@ Project: website and Training Management Platform (LMS) for Crystal Entrepreneur
 
 Read these first:
 - `docs/scope-v2.md`: the ten modules, exclusions and roles (student, tutor, admin, super_admin). Supersedes the module list in `features.md`.
-- `docs/infra.md`: free-tier setup: `web/` (Next.js static export on Render) + `api/` (Express on Render), Supabase, Resend
+- `docs/infra.md`: free-tier setup: `web/` (Next.js static export on Render) + `api/` (Express on Render), Supabase, email over SMTP (or Resend)
 - `docs/auth.md`: auth and user management design (current phase)
 - `docs/features.md`: original feature study, data model draft
 - `docs/proposal.md`: original client proposal (kept as written; uses "learner" and "instructor")
@@ -21,7 +21,7 @@ Terminology: use **student** and **tutor** in code, UI and docs, never "learner"
 - Next.js (App Router) + TypeScript (strict)
 - Tailwind CSS with design tokens defined once (CSS variables plus Tailwind theme)
 - `next/font` for fonts
-- pnpm monorepo: `web/` (this Next.js site, `output: "export"`) and `api/` (Express + TypeScript). Supabase (Postgres, Auth, RLS) with migrations in `api/supabase/migrations`; Resend for email. See `docs/infra.md`.
+- pnpm monorepo: `web/` (this Next.js site, `output: "export"`) and `api/` (Express + TypeScript). Supabase (Postgres, Auth, RLS) with migrations in `api/supabase/migrations`; email over SMTP from our own domain (Resend also supported). See `docs/infra.md`.
 - The web app never holds the Supabase service role key; privileged work goes through the API.
 - Package manager: pnpm
 - No UI kit for the landing page. Hand-built components.
@@ -46,7 +46,7 @@ web/src/lib/site.ts                   phone, form link, address, urls
 - No emoji in the UI.
 - Keep the British spelling used in the copy (programme, organise, visualisation).
 - Items the copy marks "to be confirmed" (dates, fees, certificates) must not be shown as facts. Hide them or show "Details to be announced".
-- Phone: +234 703 203 8565 (make it a `tel:` link). Application form: https://forms.gle/DKMJPQvVLbwWSsbeA (keep in `web/src/lib/site.ts` so we can swap it for our own form later).
+- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's calls to action are Log in (`/login/`) and Activate your account (`/activate-account/`), both kept in `web/src/lib/site.ts`. Do not add Apply links.
 
 ## Design direction: sweet and neutral, not "AI template"
 
@@ -76,11 +76,11 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - **Type:** a readable serif for headings (e.g. Newsreader or Source Serif 4) and a plain sans for body and UI (e.g. Public Sans or Instrument Sans). Large, well-spaced headings, comfortable body size (17 to 18px), max line length around 68ch.
 - **Structure:** hairline rules (1px `--line`) to separate content, short kickers instead of section numbers (client removed the 01, 02... section tags), generous whitespace, left-aligned text, a clear grid. Asymmetry is fine.
 - **Corners:** small radius (2 to 6px) or square. No pills except maybe tiny tags.
-- **Imagery:** real photos only, supplied by the client. Until then use plain neutral placeholders with a caption like "Campus photo", not illustrations or AI images.
+- **Imagery:** real photos only, with no visible captions or credit lines (alt text only; credits are kept in `web/public/images/CREDITS.md`). Until then use plain neutral placeholders with a caption like "Campus photo", not illustrations or AI images.
 - **Motion:** subtle fade or rise on scroll at most, under 300ms, and off under `prefers-reduced-motion`.
 
 ### Section ideas (from the copy)
-- **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Apply button plus Enquire (phone) as a text link, location line. Room for one real photo.
+- **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Log in button plus an Activate your account text link and Enquire (phone), location line. Room for one real photo.
 - **About:** two-column text, intro on the left, "Why participate" as a numbered list with short descriptions on the right.
 - **Programme structure:** a horizontal 26-week ruler/timeline, weeks 1 to 6 marked "Virtual" and 7 to 26 marked "Physical and practical at OAUSTECH". Stacks vertically on mobile. This is the visual centrepiece.
 - **Training areas (8):** an index list (01 to 08) like a book's table of contents. Each row expands (accordion) to show topics and "What you will gain". Not a card grid.

@@ -1,4 +1,4 @@
-import { ApplyLink } from "@/components/ui/ApplyLink";
+import { LoginLink } from "@/components/ui/LoginLink";
 import { PhotoFigure } from "@/components/ui/PhotoFigure";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { imageSlots } from "@/content/images";
@@ -27,11 +27,19 @@ export function Hero() {
           <div className="lg:col-span-4 lg:pb-2">
             <p className="max-w-[34ch] font-serif text-[1.3125rem] leading-snug md:text-2xl">{hero.strapline}</p>
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <ApplyLink>{hero.applyLabel}</ApplyLink>
+              <LoginLink>{hero.loginLabel}</LoginLink>
+              <p className="text-[0.9375rem]">
+                {hero.activatePrompt}{" "}
+                <a href={site.platform.activate} className={textLinkClass}>
+                  {hero.activateLabel}
+                </a>
+              </p>
+            </div>
+            <p className="mt-4 text-[0.9375rem]">
               <a href={site.phone.href} className={textLinkClass}>
                 {hero.enquireLabel}: <span className="whitespace-nowrap">{site.phone.display}</span>
               </a>
-            </div>
+            </p>
             <p className="mt-6 text-[0.9375rem] text-ink-muted">
               <span className="font-semibold text-ink">Location:</span> {hero.location}
             </p>

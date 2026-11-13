@@ -49,6 +49,12 @@ export default function LoginPage() {
           </a>
         </div>
       </form>
+      <p className="mt-8 border-t border-line pt-6 text-ui-sm text-ink-muted">
+        First time here?{" "}
+        <a href="/activate-account/" className={linkClass}>
+          Activate your account
+        </a>
+      </p>
     </>
   );
 }

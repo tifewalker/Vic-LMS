@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ApplyLink } from "@/components/ui/ApplyLink";
+import { LoginLink } from "@/components/ui/LoginLink";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { finalCta, hero } from "@/content/landing";
 import type { NavItem } from "@/content/navigation";
@@ -63,7 +63,7 @@ export function MobileMenu({ items }: { items: readonly NavItem[] }) {
             ))}
           </ul>
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <ApplyLink>{finalCta.applyLabel}</ApplyLink>
+            <LoginLink>{finalCta.loginLabel}</LoginLink>
             <a href={site.phone.href} className={textLinkClass}>
               {hero.enquireLabel}: {site.phone.display}
             </a>

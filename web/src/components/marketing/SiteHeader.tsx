@@ -1,4 +1,4 @@
-import { ApplyLink } from "@/components/ui/ApplyLink";
+import { LoginLink } from "@/components/ui/LoginLink";
 import { finalCta } from "@/content/landing";
 import { navItems } from "@/content/navigation";
 import { Brand } from "./Brand";
@@ -25,7 +25,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden xl:block">
-          <ApplyLink size="sm">{finalCta.applyLabel}</ApplyLink>
+          <LoginLink size="sm">{finalCta.loginLabel}</LoginLink>
         </div>
 
         <MobileMenu items={navItems} />

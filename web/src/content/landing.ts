@@ -29,7 +29,7 @@ export type TrainingArea = {
 };
 
 /** Inline link targets resolved from src/lib/site.ts at render time. */
-export type LinkTarget = "phone" | "form";
+export type LinkTarget = "phone" | "activate";
 
 /** A run of text where some pieces are links. */
 export type RichText = (string | { text: string; link: LinkTarget })[];
@@ -55,7 +55,9 @@ export const hero = {
     "From learning how to build a business and use digital tools to exploring artificial intelligence, drone technology, data processing and other emerging innovations, this programme offers an opportunity to discover your potential, develop practical abilities and prepare for the opportunities of tomorrow.",
   ],
   summary: "26 weeks of learning, practical training, creativity and innovation.",
-  applyLabel: "Apply for the Programme",
+  loginLabel: "Log in to your dashboard",
+  activatePrompt: "First time here?",
+  activateLabel: "Activate your account",
   enquireLabel: "Enquire",
   location: "OAUSTECH, Okitipupa, Ondo State, Nigeria",
 } as const;
@@ -402,11 +404,11 @@ export const faq = {
       ],
     },
     {
-      question: "How do I apply?",
+      question: "How do I access the programme?",
       answer: [
-        "Complete the official application form using the ",
-        { text: "application link", link: "form" },
-        " provided on this page. Ensure that the information submitted is accurate.",
+        "Applications for this cohort have closed. Registered participants can log in with their matric number or email. If you have not activated your account yet, use ",
+        { text: "Activate your account", link: "activate" },
+        ".",
       ],
     },
     {
@@ -416,15 +418,13 @@ export const faq = {
   ] satisfies FaqItem[],
 } as const;
 
+/** Applications are closed, so the closing block points registered participants to the platform. */
 export const finalCta = {
-  kicker: "Take the Next Step",
-  heading: "Your Future Should Not Be Limited by What You Know Today.",
-  body: [
-    "The opportunities created by entrepreneurship and technology are growing. The ability to learn, adapt and apply new skills can help you become part of that future.",
-    "Whether you want to start a business, develop a digital career, explore drone technology, understand artificial intelligence or build practical data skills, this programme is an opportunity to begin.",
-  ],
-  strapline: "Learn new skills. Discover opportunities. Build something meaningful.",
-  applyLabel: "Apply Now",
+  heading: "Already registered?",
+  body: "Log in to see your classes, materials and assessments.",
+  loginLabel: "Log in",
+  activatePrompt: "First time here?",
+  activateLabel: "Activate your account",
   facts: [
     { term: "Programme", description: "Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme" },
     { term: "Duration", description: "26 Weeks" },
@@ -435,14 +435,15 @@ export const finalCta = {
 } as const;
 
 export const contact = {
-  heading: "Contact and Application Information",
+  heading: "Contact Information",
   institution: "Olusegun Agagu University of Science and Technology (OAUSTECH)",
   address: "Okitipupa, Ondo State, Nigeria.",
   enquiriesLabel: "Programme Enquiries",
-  formLabel: "Application Form",
+  platformLabel: "Registered Participants",
+  platformLinkLabel: "Log in to the training platform",
   websiteLabel: "Official University Website",
   partnershipLine,
-  // Not rendered: the copy's closing note says application dates, fees, certificate arrangements,
-  // available tracks and final schedules must be confirmed before publication.
-  // TODO(content): add dates, fees and schedules only once organisers confirm them.
+  // Not rendered: the copy's closing note says fees, certificate arrangements, available tracks
+  // and final schedules must be confirmed before publication.
+  // TODO(content): add fees and schedules only once organisers confirm them.
 } as const;

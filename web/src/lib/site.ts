@@ -38,8 +38,11 @@ export const site = {
     href: "tel:+2347032038565",
   },
 
-  /** Google Form for now. Swap for the in-platform form in a later phase. */
-  applicationFormUrl: "https://forms.gle/DKMJPQvVLbwWSsbeA",
+  /** Applications for this cohort are closed. Registered participants use the platform. */
+  platform: {
+    login: "/login/",
+    activate: "/activate-account/",
+  },
 } as const;
 
 /** "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH" */
