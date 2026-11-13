@@ -27,7 +27,7 @@ function Photo({ image, sizes, className }: { image: SiteImage; sizes: string; c
 }
 
 /**
- * The eight areas as a table of contents. Each row opens to show its photo, topics and outcomes.
+ * The eight areas as a table of contents. Each row opens to show its photo, topics and one short line on what you will gain.
  * On wide screens a fixed panel on the right previews the photo of the row being hovered or focused.
  */
 export function TrainingAreas() {

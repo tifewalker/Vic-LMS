@@ -1,7 +1,7 @@
 import { partnershipLine } from "@/lib/site";
 /**
  * Landing page copy as typed data.
- * Source of truth: content/landing-copy.md (approved copy). Do not edit wording here
+ * Source: content/landing-copy.md (approved copy, with the changes listed at its top). Do not edit wording here
  * without updating that file. Contact details and links live in src/lib/site.ts.
  *
  * Headings that appear in capitals in the copy file are stored in title case here;
@@ -72,8 +72,12 @@ export const about = {
     "The programme goes beyond introducing participants to technology. It encourages them to understand how technology can be applied to solve real problems, create business opportunities, improve productivity and develop sustainable sources of income.",
     "Whether your ambition is to establish a business, become a skilled professional, work with technology or explore a new career path, this programme provides a foundation for your next step.",
   ],
-  whyHeading: "Why Participate?",
-  whyItems: [
+  /**
+   * "Why participate" and "What you can expect to gain" merged into one list. Every phrase
+   * comes from those two lists in content/landing-copy.md; duplicates removed.
+   */
+  benefitsHeading: "What You Will Gain",
+  benefits: [
     {
       term: "Practical Skills",
       description: "Develop useful skills through guided exercises, demonstrations and hands-on activities.",
@@ -83,22 +87,24 @@ export const about = {
       description: "Learn how to identify opportunities, develop business ideas and create value.",
     },
     {
-      term: "Technology Exposure",
-      description: "Explore modern technologies and understand how they are applied in real-world industries.",
+      term: "Digital Skills",
+      description: "Build foundational ICT and digital skills, and learn to use digital tools to address everyday challenges.",
     },
     {
-      term: "Problem-Solving",
-      description: "Learn to use digital tools and technology to address everyday challenges.",
+      term: "Technology Exposure",
+      description: "Explore artificial intelligence, data, drones, cybersecurity, IoT and blockchain, and how they are applied in real-world industries.",
     },
     {
       term: "Career Opportunities",
-      description: "Build knowledge and practical experience that can support your professional development.",
+      description: "Identify possible business, career and innovation opportunities, with practical experience that supports your professional development.",
     },
     {
       term: "Innovation and Creativity",
       description: "Develop the confidence to experiment, build ideas and explore new possibilities.",
     },
   ] satisfies DefinitionItem[],
+  /** Condensed from "Who should participate". */
+  audience: "Open to students, graduates, aspiring entrepreneurs and professionals who want practical skills.",
 } as const;
 
 export const structure = {
@@ -159,7 +165,7 @@ export const trainingAreas = {
         "Building and promoting a business.",
         "Introduction to business growth and sustainability.",
       ],
-      gain: "A better understanding of how to identify opportunities, develop business ideas and take the first steps towards building a business.",
+      gain: "How to identify opportunities and take the first steps towards building a business.",
     },
     {
       number: 2,
@@ -178,7 +184,7 @@ export const trainingAreas = {
         "Basic technical troubleshooting.",
         "Digital safety and responsible technology use.",
       ],
-      gain: "Practical digital knowledge and the confidence to work with common technology tools and systems.",
+      gain: "Confidence with common technology tools and systems.",
     },
     {
       number: 3,
@@ -198,7 +204,7 @@ export const trainingAreas = {
         "Data visualisation and reporting.",
         "Using analytics to improve business decisions.",
       ],
-      gain: "The ability to understand digital marketing channels, promote products and services online, and use data to evaluate performance.",
+      gain: "Promote products and services online and use data to evaluate performance.",
     },
     {
       number: 4,
@@ -217,7 +223,7 @@ export const trainingAreas = {
         "Introduction to automation and intelligent workflows.",
         "Responsible and ethical use of AI.",
       ],
-      gain: "An understanding of modern AI tools and how they can be used to improve productivity, solve problems and develop new opportunities.",
+      gain: "How modern AI tools can improve productivity and solve problems.",
     },
     {
       number: 5,
@@ -237,7 +243,7 @@ export const trainingAreas = {
         "Cybersecurity awareness for businesses.",
         "Responsible handling of digital information.",
       ],
-      gain: "Practical awareness of digital risks and the knowledge to adopt safer technology practices.",
+      gain: "Awareness of digital risks and safer technology practices.",
     },
     {
       number: 6,
@@ -259,7 +265,7 @@ export const trainingAreas = {
         "Processing and interpreting drone-captured data.",
         "Real-world applications of drone technology.",
       ],
-      gain: "An understanding of drone technology, its practical uses and how aerial data can support business, research and industry.",
+      gain: "How drones and aerial data can support business, research and industry.",
       note: "Practical drone operations will be subject to equipment availability, appropriate supervision and applicable aviation and safety requirements.",
     },
     {
@@ -281,7 +287,7 @@ export const trainingAreas = {
         "Understanding aerial and drone-generated datasets.",
         "Using data to support decisions.",
       ],
-      gain: "The ability to work with data, organise information, identify patterns and communicate findings.",
+      gain: "Work with data, identify patterns and communicate findings.",
     },
     {
       number: 8,
@@ -299,78 +305,32 @@ export const trainingAreas = {
         "Blockchain applications in business and digital services.",
         "Innovation opportunities around emerging technologies.",
       ],
-      gain: "A foundational understanding of emerging technologies and the opportunities they may create across different industries.",
+      gain: "A foundation in emerging technologies and the opportunities they may create.",
     },
   ] satisfies TrainingArea[],
 } as const;
 
-export const whoShouldParticipate = {
-  heading: "Who Should Participate?",
-  intro:
-    "The programme is suitable for individuals who want to develop practical skills, explore entrepreneurship and understand how technology can create opportunities.",
-  listLead: "It may be particularly valuable for:",
-  items: [
-    "Young people interested in technology and innovation.",
-    "Aspiring entrepreneurs and business owners.",
-    "Students and recent graduates.",
-    "Individuals interested in digital careers.",
-    "Professionals looking to develop additional skills.",
-    "People interested in AI, data, drones and emerging technologies.",
-    "Individuals seeking practical knowledge for self-employment and business development.",
-  ],
-  closing:
-    "You do not need to have mastered every subject before joining. A willingness to learn, participate and develop new skills is important.",
-} as const;
-
-export const eligibility = {
-  heading: "Eligibility Requirements",
-  listLead: "Applicants should demonstrate:",
-  items: [
-    "Interest in entrepreneurship, technology or digital skills.",
-    "Willingness to participate in the programme.",
-    "Commitment to attending scheduled virtual and physical sessions.",
-    "A passion for learning, innovation and personal development.",
-    "Relevant educational background or interest in the selected training area.",
-  ],
-  closing:
-    "Specific academic or professional requirements may depend on the training area and will be communicated by the programme organisers.",
-} as const;
-
-export const outcomes = {
-  heading: "What You Can Expect to Gain",
-  listLead: "By participating in this programme, you will have the opportunity to:",
-  items: [
-    "Develop entrepreneurial knowledge and business awareness.",
-    "Build foundational ICT and digital skills.",
-    "Understand how modern technology is used in different industries.",
-    "Explore practical applications of artificial intelligence.",
-    "Gain exposure to drone operations and aerial data applications.",
-    "Develop basic data processing and analytical skills.",
-    "Understand cybersecurity and responsible data practices.",
-    "Explore emerging technologies such as IoT and blockchain.",
-    "Work on practical exercises and learning activities.",
-    "Identify possible business, career and innovation opportunities.",
-  ],
-  closing:
-    "The programme is designed to encourage practical learning and confidence, helping participants understand how to apply their knowledge beyond the classroom.",
-} as const;
-
-export const whyOaustech = {
-  kicker: "Why OAUSTECH?",
-  heading: "Learning, Technology and Development",
-  body: [
-    "Olusegun Agagu University of Science and Technology (OAUSTECH), Okitipupa, is a technology-focused university established to support scientific, technological and professional development.",
-    "The University's vision is to develop technologically competent individuals who can respond to the needs of their environment in a technology-driven economy.",
-  ],
-  /** Set large as a quote. */
-  motto: "For Society and Development",
-  /** The full sentence from the copy, unchanged. */
-  mottoSentence:
-    "Its motto, “For Society and Development,” reflects the importance of applying knowledge and innovation to improve communities and society.",
-  closing:
-    "This programme supports that broader direction by bringing entrepreneurship, digital skills and emerging technologies together in a practical learning experience.",
-  location: "Olusegun Agagu University of Science and Technology, Okitipupa, Ondo State, Nigeria.",
-  websiteLabel: "Official website",
+/** "Who's behind the programme": Crystal Entrepreneurship Centre and OAUSTECH, then past trainings. */
+export const behind = {
+  kicker: "About Us",
+  heading: "Who's Behind the Programme",
+  crystal: {
+    heading: "Crystal Entrepreneurship Centre",
+    body: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. This programme with OAUSTECH builds on that experience. The photos here are from our past trainings.",
+  },
+  oaustech: {
+    heading: "OAUSTECH",
+    /** Shortened from the copy's "Why OAUSTECH?" section. */
+    body: [
+      "Olusegun Agagu University of Science and Technology (OAUSTECH), Okitipupa, is a technology-focused university established to support scientific, technological and professional development.",
+      "This programme supports that broader direction by bringing entrepreneurship, digital skills and emerging technologies together in a practical learning experience.",
+    ],
+    /** Set large as a quote. */
+    motto: "For Society and Development",
+    mottoLabel: "The university's motto",
+    websiteLabel: "Official website",
+  },
+  galleryHeading: "From Our Past Trainings",
 } as const;
 
 export const faq = {
@@ -386,30 +346,16 @@ export const faq = {
       answer: ["Physical training will take place at Olusegun Agagu University of Science and Technology, Okitipupa, Ondo State."],
     },
     {
-      question: "Do I need prior experience in technology?",
-      answer: ["Prior experience may be helpful for some training areas, but the programme is intended to introduce and develop relevant knowledge and practical skills. Specific entry requirements will be communicated by the organisers."],
-    },
-    {
-      question: "Will there be practical drone training?",
-      answer: ["Drone technology and aerial data applications are proposed as part of the training areas. Practical flying activities will depend on equipment availability, appropriate supervision and applicable safety and aviation requirements."],
-    },
-    {
-      question: "Will I receive a certificate?",
-      // Certificate arrangements are still to be confirmed, so the copy's internal wording is replaced
-      // with "Details to be announced" (agreed with the client).
-      answer: [
-        "Details to be announced. Please contact the ",
-        { text: "programme team", link: "phone" },
-        " for details.",
-      ],
-    },
-    {
       question: "How do I access the programme?",
       answer: [
         "Applications for this cohort have closed. Registered participants can log in with their matric number or email. If you have not activated your account yet, use ",
         { text: "Activate your account", link: "activate" },
         ".",
       ],
+    },
+    {
+      question: "Will there be practical drone training?",
+      answer: ["Drone technology and aerial data applications are proposed as part of the training areas. Practical flying activities will depend on equipment availability, appropriate supervision and applicable safety and aviation requirements."],
     },
     {
       question: "Who can I contact for enquiries?",

@@ -16,13 +16,13 @@ type Props = {
   className?: string;
 };
 
-/** A photo slot that works with or without a photo. Real photos only. */
+/** A photo slot that works with or without a photo. Real photos only: square corners, hairline frame, no caption. */
 export function PhotoFigure({ image, aspect, sizes, placeholderCaption, preload, className }: Props) {
   if (!image) {
     if (!placeholderCaption) return null;
     return (
       <figure className={className}>
-        <div aria-hidden="true" className={cx("rounded-sm border border-line bg-paper-2", aspect)} />
+        <div aria-hidden="true" className={cx("border border-line bg-paper-2", aspect)} />
         <figcaption className="mt-3 text-sm text-ink-muted">{placeholderCaption}</figcaption>
       </figure>
     );
@@ -30,7 +30,7 @@ export function PhotoFigure({ image, aspect, sizes, placeholderCaption, preload,
 
   return (
     <figure className={className}>
-      <div className={cx("relative overflow-hidden rounded-sm bg-paper-2", aspect)}>
+      <div className={cx("relative overflow-hidden border border-line bg-paper-2", aspect)}>
         <Image
           src={image.src}
           alt={image.alt}

@@ -79,16 +79,16 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - **Imagery:** real photos only, with no visible captions or credit lines (alt text only; credits are kept in `web/public/images/CREDITS.md`). Until then use plain neutral placeholders with a caption like "Campus photo", not illustrations or AI images.
 - **Motion:** subtle fade or rise on scroll at most, under 300ms, and off under `prefers-reduced-motion`.
 
-### Section ideas (from the copy)
-- **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Log in button plus an Activate your account text link and Enquire (phone), location line. Room for one real photo.
-- **About:** two-column text, intro on the left, "Why participate" as a numbered list with short descriptions on the right.
-- **Programme structure:** a horizontal 26-week ruler/timeline, weeks 1 to 6 marked "Virtual" and 7 to 26 marked "Physical and practical at OAUSTECH". Stacks vertically on mobile. This is the visual centrepiece.
-- **Training areas (8):** an index list (01 to 08) like a book's table of contents. Each row expands (accordion) to show topics and "What you will gain". Not a card grid.
-- **Who should participate and eligibility:** two plain lists side by side.
-- **What you can expect to gain:** a simple ruled list.
-- **Why OAUSTECH:** short text with the motto set large as a quote.
-- **FAQ:** accordion.
-- **Final call to action and footer:** contact, form link, university website, location.
+### Landing page sections (in this order)
+1. **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Log in button plus an Activate your account text link and Enquire (phone), location line. One real photo from Crystal's past trainings.
+2. **About:** intro paragraphs on the left; on the right one numbered list of six benefits ("Why participate" and "What you can expect to gain" merged) and one line on who it is for.
+3. **Programme structure:** a horizontal 26-week ruler/timeline, weeks 1 to 6 marked "Virtual" and 7 to 26 marked "Physical and practical at OAUSTECH". Stacks vertically on mobile. This is the visual centrepiece.
+4. **Training areas (8):** an index list (01 to 08) like a book's table of contents. Each row expands (accordion) to show its photo, topics and one short "What you will gain" line. Not a card grid.
+5. **Who's behind the programme** (`#about-us`): Crystal Entrepreneurship Centre and OAUSTECH (motto set large, campus gate photo) side by side, then a "From our past trainings" gallery with a lightbox (a horizontal snap strip on mobile).
+6. **FAQ:** accordion, six questions.
+7. **Final call to action and footer:** Already registered? Log in, activate link, contact, university website, location.
+
+Removed for good (applications are closed): eligibility, the separate "Who should participate", "What you can expect to gain", "Why OAUSTECH" and "Programme in pictures" sections, and the certificate question.
 
 ## Branding and images
 
@@ -98,15 +98,17 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - **Footer:** include the line "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH".
 - There is no Crystal Entrepreneurship Centre logo yet. Set the name in the heading serif as a wordmark and keep a `TODO(content):` for the real logo until the client supplies one.
 
-### Images: real OAUSTECH images, self-hosted
+### Images: real photos, self-hosted
 - Use real images from the OAUSTECH website, downloaded into `web/public/images/` and served with `next/image`. Never hotlink.
   - Logo: https://oaustech.edu.ng/images/logo.png to `web/public/images/oaustech-logo.png`
-  - Campus photo: https://oaustech.edu.ng/cache/resized/0930ca64ead13e2113232a6df145a9c7.jpg to `web/public/images/oaustech-campus.jpg` (used in the hero)
-  - Auditorium: https://oaustech.edu.ng/cache/resized/e5032fe998fcdad7d034560cc740340a.jpg to `web/public/images/oaustech-auditorium.jpg` (About)
-  - Library: https://oaustech.edu.ng/cache/resized/25409442948fc7b1a29bf29244f3c3f6.jpg to `web/public/images/oaustech-library.jpg` (Why OAUSTECH)
+  - Campus photo: https://oaustech.edu.ng/cache/resized/0930ca64ead13e2113232a6df145a9c7.jpg to `web/public/images/oaustech-campus.jpg` (About us section)
+  - Auditorium: https://oaustech.edu.ng/cache/resized/e5032fe998fcdad7d034560cc740340a.jpg to `web/public/images/oaustech-auditorium.jpg` (not used at present)
+  - Library: https://oaustech.edu.ng/cache/resized/25409442948fc7b1a29bf29244f3c3f6.jpg to `web/public/images/oaustech-library.jpg` (not used at present)
 - If a download fails, use a neutral placeholder captioned "Campus photo" and report it. Never substitute stock photos or AI images.
 - Write proper, descriptive alt text. No em dashes in alt text.
-- The About and Why OAUSTECH sections have image slots that work with or without a photo. More client photos may be added later; register them in one place (`web/src/content/images.ts`) rather than hard-coding paths in components.
+- Crystal's own training photos (client supplied) live in `web/public/images/crystal/` as WebP; originals stay out of the build in `web/assets/photo-originals/`. Prefer them over stock photos wherever one fits. Pexels stock remains only for training areas with no matching real photo.
+- Photos have square corners, a hairline frame, no filters or overlays and no visible captions.
+- Register every photo in one place (`web/src/content/images.ts`) rather than hard-coding paths in components.
 
 ## Quality bar
 

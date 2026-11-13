@@ -48,8 +48,8 @@ export function Hero() {
 
         <PhotoFigure
           image={imageSlots.hero}
-          placeholderCaption="Campus photo"
-          aspect="aspect-[3/2] sm:aspect-[2/1] lg:aspect-[1920/550]"
+          placeholderCaption="Training photo"
+          aspect="aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2/1]"
           sizes="(min-width: 1312px) 1216px, 100vw"
           preload
           className="mt-12 md:mt-16"

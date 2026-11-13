@@ -1,3 +1,10 @@
+> **Site changes requested in November 2026.** The live landing page follows this copy with these changes:
+> - About: "Why participate?" and "What you can expect to gain" are merged into one list of six, "What You Will Gain", using wording from both lists. Under it: "Open to students, graduates, aspiring entrepreneurs and professionals who want practical skills."
+> - Training areas: each "What you will gain" is shortened to one line.
+> - Removed: Who should participate (now the one line above), Eligibility requirements, What you can expect to gain, Why OAUSTECH (now part of the section below), the "Do I need prior experience" and certificate FAQs.
+> - New section "Who's Behind the Programme": Crystal Entrepreneurship Centre: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. This programme with OAUSTECH builds on that experience. The photos here are from our past trainings." OAUSTECH: the first and last paragraphs of Why OAUSTECH, with the motto set large. Then "From Our Past Trainings", a photo gallery.
+> The text in `web/src/content/landing.ts` is the source for the live wording.
+
 # OAUSTECH ENTREPRENEURSHIP, ICT, DIGITAL SKILLS & EMERGING TECHNOLOGIES TRAINING PROGRAMME
 
 ## 26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.

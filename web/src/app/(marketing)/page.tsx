@@ -1,11 +1,8 @@
 import { Hero } from "@/components/marketing/Hero";
 import { About } from "@/components/marketing/About";
 import { ProgrammeTimeline } from "@/components/marketing/ProgrammeTimeline";
-import { ProgrammePictures } from "@/components/marketing/ProgrammePictures";
 import { TrainingAreas } from "@/components/marketing/TrainingAreas";
-import { Participation } from "@/components/marketing/Participation";
-import { Outcomes } from "@/components/marketing/Outcomes";
-import { WhyOaustech } from "@/components/marketing/WhyOaustech";
+import { Behind } from "@/components/marketing/Behind";
 import { Faq } from "@/components/marketing/Faq";
 import { FinalCta } from "@/components/marketing/FinalCta";
 
@@ -15,11 +12,8 @@ export default function LandingPage() {
       <Hero />
       <About />
       <ProgrammeTimeline />
-      <ProgrammePictures />
       <TrainingAreas />
-      <Participation />
-      <Outcomes />
-      <WhyOaustech />
+      <Behind />
       <Faq />
       <FinalCta />
     </main>
