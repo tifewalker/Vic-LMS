@@ -1,6 +1,7 @@
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import { webOrigins } from "./env.js";
+import { logError } from "./lib/errors.js";
 import { requireAuth } from "./middleware/auth.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter, meHandler } from "./routes/auth.js";
@@ -27,10 +28,12 @@ app.use("/student", learnRouter);
 
 app.use((_req, res) => res.status(404).json({ error: "Not found." }));
 
-const onError: ErrorRequestHandler = (err, _req, res, _next) => {
-  console.error(err);
+/** Logs the real error (route, message, code, stack) and returns a generic message to the client. */
+const onError: ErrorRequestHandler = (err, req, res, _next) => {
   if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "Invalid JSON." });
   if (err?.type === "entity.too.large") return res.status(413).json({ error: "Upload is too large." });
+  logError(`${req.method} ${req.originalUrl.split("?")[0]}`, err);
+  if (res.headersSent) return;
   res.status(500).json({ error: "Something went wrong. Please try again." });
 };
 app.use(onError);

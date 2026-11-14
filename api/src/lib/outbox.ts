@@ -2,6 +2,7 @@ import { env, webUrl } from "../env.js";
 import { admin } from "../supabase.js";
 import { EmailError, dailyCap, firstName, resetEmail, sendBudget, sendEmail, sentToday } from "./email.js";
 import { loadInviteTarget, sendInvite } from "./invites.js";
+import { logError } from "./errors.js";
 
 /**
  * The outbox. Two queues share the daily cap and the per-minute rate:
@@ -128,7 +129,7 @@ export async function queuePasswordReset(email: string): Promise<void> {
   const { error } = await admin.from("email_queue").insert({ kind: "password_reset", to_email: email });
   // 23505: one is already queued for this address. That one will do.
   if (error && error.code !== "23505") throw error;
-  void drainOutbox().catch((err) => console.error("outbox run failed", err));
+  void drainOutbox().catch((err) => logError("outbox run", err));
 }
 
 /**

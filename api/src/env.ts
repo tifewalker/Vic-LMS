@@ -60,8 +60,15 @@ const schema = z
 
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
-  console.error("Invalid environment variables:");
-  for (const issue of parsed.error.issues) console.error(`  ${issue.path.join(".")}: ${issue.message}`);
+  // Fail at startup, naming each variable, rather than with 500s at request time.
+  const lines = parsed.error.issues.map((issue) => {
+    const key = issue.path.join(".");
+    const missing = process.env[key] === undefined || process.env[key] === "";
+    return `  ${key}: ${missing ? "is missing" : issue.message}`;
+  });
+  console.error("Cannot start the API: invalid environment variables.");
+  for (const line of lines) console.error(line);
+  console.error("Set them in api/.env locally, or in the Render dashboard (Environment) in production. See api/.env.example.");
   process.exit(1);
 }
 

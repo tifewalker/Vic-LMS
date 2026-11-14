@@ -1,6 +1,8 @@
 import { app } from "./app.js";
 import { env } from "./env.js";
+import { logError } from "./lib/errors.js";
 import { drainOutbox } from "./lib/outbox.js";
+import { checkSchema } from "./lib/schema-check.js";
 
 app.listen(env.PORT, () => {
   console.log(`API listening on http://localhost:${env.PORT}`);
@@ -10,9 +12,10 @@ app.listen(env.PORT, () => {
     console.warn("EMAIL_FROM uses resend.dev: Resend will only deliver to your own account address. Set EMAIL_FROM on a verified domain.");
   }
   if (env.EMAIL_PROVIDER !== "console" && !env.EMAIL_REPLY_TO) console.warn("EMAIL_REPLY_TO is not set: replies go to the From address.");
+  checkSchema().catch((err) => logError("schema check", err));
 });
 
 // The outbox sends queued emails as the daily cap and the per-minute rate allow.
 setInterval(() => {
-  drainOutbox().catch((err) => console.error("outbox run failed", err));
+  drainOutbox().catch((err) => logError("outbox run", err));
 }, 60_000).unref();

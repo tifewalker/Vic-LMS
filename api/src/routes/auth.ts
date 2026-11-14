@@ -9,6 +9,7 @@ import { queueInvite, queuePasswordReset } from "../lib/outbox.js";
 import { hashToken, looksLikeToken, passwordProblems } from "../lib/tokens.js";
 import { requireAuth } from "../middleware/auth.js";
 import { admin, anonClient } from "../supabase.js";
+import { logError } from "../lib/errors.js";
 
 export const authRouter = Router();
 
@@ -173,7 +174,7 @@ authRouter.post("/forgot-password", byIp(10), forgotByEmail, async (req, res) =>
     // Queued behind any activation emails; the link is created when it is sent.
     await queuePasswordReset(email);
   } catch (err) {
-    console.error("forgot-password failed", err);
+    logError("POST /auth/forgot-password (queue)", err);
   }
 });
 
@@ -204,7 +205,7 @@ authRouter.post("/request-activation", byIp(10), requestByIdentifier, async (req
       .maybeSingle();
     if (invite) await queueInvite(invite.id);
   } catch (err) {
-    console.error("request-activation failed", err);
+    logError("POST /auth/request-activation (queue)", err);
   }
 });
 
