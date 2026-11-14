@@ -1,3 +1,10 @@
+> **Site changes requested in November 2026.** The live landing page follows this copy with these changes:
+> - About: "Why participate?" and "What you can expect to gain" are merged into one list of six, "What You Will Gain", using wording from both lists. Under it: "Open to students, graduates, aspiring entrepreneurs and professionals who want practical skills."
+> - Training areas: each "What you will gain" is shortened to one line.
+> - Removed: Who should participate (now the one line above), Eligibility requirements, What you can expect to gain, Why OAUSTECH (now part of the section below), the "Do I need prior experience" and certificate FAQs.
+> - New section "Who's Behind the Programme": Crystal Entrepreneurship Centre: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. This programme with OAUSTECH builds on that experience. The photos here are from our past trainings." OAUSTECH: the first and last paragraphs of Why OAUSTECH, with the motto set large. Then "From Our Past Trainings", a photo gallery.
+> The text in `web/src/content/landing.ts` is the source for the live wording.
+
 # OAUSTECH ENTREPRENEURSHIP, ICT, DIGITAL SKILLS & EMERGING TECHNOLOGIES TRAINING PROGRAMME
 
 ## 26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.
@@ -12,7 +19,9 @@ From learning how to build a business and use digital tools to exploring artific
 
 **26 weeks of learning, practical training, creativity and innovation.**
 
-[APPLY FOR THE PROGRAMME]
+[LOG IN TO YOUR DASHBOARD]
+
+First time here? [Activate your account]
 
 Location: OAUSTECH, Okitipupa, Ondo State, Nigeria
 
@@ -334,9 +343,9 @@ Drone technology and aerial data applications are proposed as part of the traini
 
 Certificate arrangements should be confirmed by the programme organisers. Please contact the programme team for details.
 
-### 7. How do I apply?
+### 7. How do I access the programme?
 
-Complete the official application form using the application link provided on this page. Ensure that the information submitted is accurate.
+Applications for this cohort have closed. Registered participants can log in with their matric number or email. If you have not activated your account yet, use Activate your account.
 
 ### 8. Who can I contact for enquiries?
 
@@ -344,17 +353,13 @@ You can contact the programme team on **+234 703 203 8565**.
 
 ---
 
-# TAKE THE NEXT STEP
+## Already registered?
 
-## Your Future Should Not Be Limited by What You Know Today.
+Log in to see your classes, materials and assessments.
 
-The opportunities created by entrepreneurship and technology are growing. The ability to learn, adapt and apply new skills can help you become part of that future.
+[LOG IN]
 
-Whether you want to start a business, develop a digital career, explore drone technology, understand artificial intelligence or build practical data skills, this programme is an opportunity to begin.
-
-**Learn new skills. Discover opportunities. Build something meaningful.**
-
-[APPLY NOW]
+First time here? [Activate your account]
 
 **Programme:** Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme  
 **Duration:** 26 Weeks  
@@ -365,15 +370,15 @@ Whether you want to start a business, develop a digital career, explore drone te
 
 ---
 
-## CONTACT AND APPLICATION INFORMATION
+## CONTACT INFORMATION
 
 **Olusegun Agagu University of Science and Technology (OAUSTECH)**  
 Okitipupa, Ondo State, Nigeria.
 
 **Programme Enquiries:** +234 703 203 8565
 
-**Application Form:**  
-https://forms.gle/DKMJPQvVLbwWSsbeA
+**Registered Participants:**  
+Log in to the training platform
 
 **Official University Website:**  
 https://oaustech.edu.ng
