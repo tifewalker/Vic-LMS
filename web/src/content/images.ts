@@ -72,6 +72,18 @@ export const images = {
   },
 } satisfies Record<string, SiteImage>;
 
+/** Optional photo slots per section. Set to an image to show it, or null for none. */
+export const imageSlots: {
+  hero: SiteImage | null;
+  about: SiteImage | null;
+  /** The OAUSTECH column of "Who's behind the programme" (formerly the Why OAUSTECH photo). */
+  oaustech: SiteImage | null;
+} = {
+  hero: images.campusGate,
+  about: images.auditorium,
+  oaustech: images.library,
+};
+
 /**
  * Photos from Crystal Entrepreneurship Centre's past trainings, supplied by the client.
  * Originals (WhatsApp exports, 1080px wide) are kept out of the build in web/assets/photo-originals.
@@ -99,15 +111,6 @@ export const crystalPhotos = {
     "A speaker with a microphone stands at a panel table in front of a Crystal Entrepreneurship Centre banner at a session with the Lagos State Office of Sustainable Development Goals", "50% 40%"),
 } satisfies Record<string, SiteImage>;
 
-/** Photo slots per section. Set to an image to show it, or null for none. */
-export const imageSlots: {
-  hero: SiteImage | null;
-  oaustech: SiteImage | null;
-} = {
-  hero: crystalPhotos.hallWide,
-  oaustech: images.campusGate,
-};
-
 /** "From our past trainings" gallery, in display order. All are real Crystal photos. */
 export const pastTrainings: SiteImage[] = [
   crystalPhotos.hallWide,
@@ -119,11 +122,15 @@ export const pastTrainings: SiteImage[] = [
 
 /**
  * One photo per training area, in the order of the eight areas (01 to 08).
- * A real Crystal photo where one matches the area (01 entrepreneurship); Pexels stock
- * photos for the rest. None of these were taken at OAUSTECH.
+ * Stock photos from Pexels. Captions describe the photo only: none of these were
+ * taken at OAUSTECH, so captions must never say they were.
  */
 export const programmePhotos: SiteImage[] = [
-  crystalPhotos.entrepreneurshipPanel,
+  pexels("entrepreneurship", 1600, 2000,
+    "A smiling trader in a mustard shirt stands with folded arms in front of a wall of leather belts in his market stall",
+    "A belt trader in his shop, Lagos market",
+    "https://www.pexels.com/photo/portrait-of-belt-vendor-in-lagos-market-33644122/",
+    "John Israel", "https://www.pexels.com/@john-israel-2151646235/", "50% 40%"),
   pexels("it-productivity", 1600, 1067,
     "Two women in green ankara prints work together at a laptop in an office with bookshelves",
     "Working through a document together on a laptop",
@@ -160,3 +167,30 @@ export const programmePhotos: SiteImage[] = [
     "https://www.pexels.com/photo/man-assembling-electronic-circuit-board-indoors-39712866/",
     "Mad Knoxx Deluxe", "https://www.pexels.com/@madknoxxdeluxe/", "45% 50%"),
 ];
+
+const droneInFlight = pexels("drone-in-flight", 1600, 2400,
+  "A white quadcopter drone flies against a pale sky beside a dark tree",
+  "A drone above the treeline, Ekiti",
+  "https://www.pexels.com/photo/drone-with-camera-in-flight-19330453/",
+  "Fajuyi Samuel Olayinka", "https://www.pexels.com/@fajuyi-samuel-olayinka-589022314/", "50% 35%");
+const planning = pexels("planning-with-charts", 1600, 2400,
+  "A woman in a white blouse writes notes over printed charts and diagrams spread across a desk",
+  "Planning with charts and diagrams",
+  "https://www.pexels.com/photo/woman-writing-on-table-with-charts-5915200/",
+  "RDNE Stock project", "https://www.pexels.com/@rdne/", "50% 45%");
+const computerLab = pexels("computer-lab", 1600, 2400,
+  "A tutor stands at the front of a computer lab while students at desktop computers listen",
+  "A coding class in a computer lab",
+  "https://www.pexels.com/photo/diverse-group-learning-programming-in-computer-lab-30879378/",
+  "Kenneth Chiamaka Ejiofor", "https://www.pexels.com/@kenneth-chiamaka-ejiofor-2149965804/", "50% 30%");
+
+/** "Programme in pictures" band, in display order. Only the campus photo is of OAUSTECH. */
+export const galleryPhotos = {
+  ai: programmePhotos[3],
+  drone: droneInFlight,
+  classroom: computerLab,
+  data: planning,
+  workshop: programmePhotos[7],
+  campus: images.campusGate,
+};
+

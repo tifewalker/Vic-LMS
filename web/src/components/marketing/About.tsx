@@ -1,3 +1,5 @@
+import { PhotoFigure } from "@/components/ui/PhotoFigure";
+import { imageSlots } from "@/content/images";
 import { about } from "@/content/landing";
 import { Section, SectionHeader } from "./Section";
 
@@ -19,6 +21,13 @@ export function About() {
               <p key={para.slice(0, 24)}>{para}</p>
             ))}
           </div>
+          {/* Photo slot: set imageSlots.about in src/content/images.ts, or null for none. */}
+          <PhotoFigure
+            image={imageSlots.about}
+            aspect="aspect-[3/2] sm:aspect-[16/9]"
+            sizes="(min-width: 1312px) 620px, (min-width: 1024px) 55vw, 100vw"
+            className="mt-12"
+          />
         </div>
 
         <div className="lg:col-span-5 lg:col-start-8 xl:col-start-8">

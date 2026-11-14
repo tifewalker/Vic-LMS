@@ -50,7 +50,7 @@ export function Behind() {
           </div>
           <PhotoFigure
             image={imageSlots.oaustech}
-            aspect="aspect-[16/7]"
+            aspect="aspect-[3/2] md:aspect-[16/7]"
             sizes="(min-width: 1312px) 600px, (min-width: 1024px) 48vw, 100vw"
             className="mt-8"
           />
