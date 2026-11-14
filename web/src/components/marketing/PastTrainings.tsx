@@ -2,74 +2,85 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SiteImage } from "@/content/images";
-import { cx } from "@/lib/cx";
+import { pastTrainings as photos } from "@/content/images";
+import { pastTrainingsGallery as copy } from "@/content/landing";
+import { Section, SectionBody, SectionHeader } from "./Section";
 
 /**
- * Grid cells for the wide-screen layout, in display order. Every photo is 4:3, so nothing
- * is cropped; the asymmetry comes from the column spans and the staggered second row.
- * Below md the list is a horizontal strip that snaps one photo at a time.
+ * "From our past trainings": a uniform grid of 4:3 photos (2 columns on mobile, 3 on tablet,
+ * 4 from 1024px, at most 1100px wide). At most `copy.maxInGrid` photos show; any others are
+ * reached through "View all photos", which opens the lightbox at photo 1.
+ *
+ * Cells are at most about 270px wide (330px on tablet), well under every source width, so no
+ * photo is ever upscaled. The lightbox caps each photo at its own source width for the same reason.
  */
-const cells = [
-  "md:col-span-7",
-  "md:col-span-5 md:self-end",
-  "md:col-span-5",
-  "md:col-span-4 md:mt-16",
-  "md:col-span-3 md:mt-32",
-];
-const sizes = ["(min-width: 768px) 58vw, 82vw", "(min-width: 768px) 42vw, 82vw", "(min-width: 768px) 42vw, 82vw", "(min-width: 768px) 33vw, 82vw", "(min-width: 768px) 25vw, 82vw"];
-
-/** Photos from past trainings. Each opens in a simple lightbox: a native modal dialog, Escape closes it. */
-export function PastTrainings({ photos, labelledBy }: { photos: SiteImage[]; labelledBy: string }) {
+export function PastTrainings() {
   const [open, setOpen] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLButtonElement | null>(null);
+  const shown = photos.slice(0, copy.maxInGrid);
 
   const show = (i: number, opener: HTMLButtonElement) => {
     openerRef.current = opener;
     setOpen(i);
   };
   const close = useCallback(() => dialogRef.current?.close(), []);
-  const step = useCallback((by: number) => setOpen((i) => (i === null ? i : (i + by + photos.length) % photos.length)), [photos.length]);
+  const step = useCallback((by: number) => setOpen((i) => (i === null ? i : (i + by + photos.length) % photos.length)), []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (open !== null && dialog && !dialog.open) dialog.showModal();
   }, [open]);
 
+  const current = open === null ? null : photos[open];
+
   return (
-    <>
-      <ul
-        aria-labelledby={labelledBy}
-        className={cx(
-          "relative -mx-gutter mt-8 flex snap-x snap-mandatory scroll-px-gutter gap-4 overflow-x-auto px-gutter pb-4",
-          "md:mx-0 md:mt-10 md:grid md:grid-cols-12 md:items-start md:gap-x-8 md:gap-y-10 md:overflow-visible md:px-0 md:pb-0",
-        )}
-      >
-        {photos.map((photo, i) => (
-          <li key={photo.src} className={cx("w-[82%] shrink-0 snap-start sm:w-[60%] md:w-auto", cells[i % cells.length])}>
+    <Section id="past-trainings" labelledBy="past-trainings-title">
+      <SectionHeader kicker={copy.kicker} titleId="past-trainings-title" title={copy.heading} />
+      <SectionBody className="mt-5">
+        <p className="max-w-measure text-ink-muted">{copy.intro}</p>
+      </SectionBody>
+
+      <div className="mx-auto mt-10 max-w-[1100px] md:mt-14">
+        <ul aria-labelledby="past-trainings-title" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 lg:gap-3">
+          {shown.map((photo, i) => (
+            <li key={photo.src}>
+              <button
+                type="button"
+                onClick={(e) => show(i, e.currentTarget)}
+                aria-haspopup="dialog"
+                className="group block w-full cursor-zoom-in"
+              >
+                <span className="relative block aspect-[4/3] overflow-hidden border border-line bg-paper-2 outline-2 outline-transparent transition-[outline-color] duration-150 group-hover:outline-accent motion-reduce:transition-none">
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    fill
+                    sizes="(min-width: 1024px) 270px, (min-width: 640px) 33vw, 50vw"
+                    loading="lazy"
+                    className="object-cover"
+                    style={{ objectPosition: "center" }}
+                  />
+                </span>
+                <span className="sr-only"> (open larger)</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {photos.length > shown.length ? (
+          <p className="mt-6">
             <button
               type="button"
-              onClick={(e) => show(i, e.currentTarget)}
-              className="group block w-full cursor-zoom-in text-left"
+              onClick={(e) => show(0, e.currentTarget)}
               aria-haspopup="dialog"
+              className="cursor-pointer font-semibold text-accent-strong underline underline-offset-4 hover:text-ink"
             >
-              <span className="relative block aspect-[4/3] overflow-hidden border border-line bg-paper">
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  sizes={sizes[i % sizes.length]}
-                  loading="lazy"
-                  className="object-cover"
-                  style={photo.objectPosition ? { objectPosition: photo.objectPosition } : undefined}
-                />
-              </span>
-              <span className="sr-only"> (open larger)</span>
+              {copy.viewAll}
             </button>
-          </li>
-        ))}
-      </ul>
+          </p>
+        ) : null}
+      </div>
 
       <dialog
         ref={dialogRef}
@@ -86,13 +97,13 @@ export function PastTrainings({ photos, labelledBy }: { photos: SiteImage[]; lab
           if (e.key === "ArrowRight") step(1);
           if (e.key === "ArrowLeft") step(-1);
         }}
-        className={cx(
+        className={[
           "m-0 h-dvh max-h-none w-full max-w-none bg-ink/95 p-4 text-paper backdrop:bg-transparent sm:p-8",
           "opacity-0 transition-opacity duration-200 open:opacity-100 starting:open:opacity-0 motion-reduce:transition-none",
           "open:flex open:flex-col",
-        )}
+        ].join(" ")}
       >
-        {open !== null ? (
+        {current && open !== null ? (
           <>
             <div className="flex items-center justify-between gap-4 text-ui-sm">
               <p className="tabular-nums" aria-live="polite">
@@ -102,15 +113,11 @@ export function PastTrainings({ photos, labelledBy }: { photos: SiteImage[]; lab
                 Close
               </button>
             </div>
-            <div className="relative mt-4 min-h-0 flex-1" onClick={(e) => e.target === e.currentTarget && close()}>
-              <Image
-                key={photos[open].src}
-                src={photos[open].src}
-                alt={photos[open].alt}
-                fill
-                sizes="100vw"
-                className="object-contain"
-              />
+            <div className="mt-4 flex min-h-0 flex-1 justify-center" onClick={(e) => e.target === e.currentTarget && close()}>
+              {/* Never wider than the source photo. */}
+              <div className="relative h-full w-full" style={{ maxWidth: current.width }}>
+                <Image key={current.src} src={current.src} alt={current.alt} fill sizes={`${current.width}px`} className="object-contain" />
+              </div>
             </div>
             <div className="mt-4 flex justify-center gap-3 text-ui-sm">
               <button type="button" onClick={() => step(-1)} className="cursor-pointer rounded-sm border border-paper/40 px-4 py-2 font-semibold hover:border-paper">
@@ -123,6 +130,6 @@ export function PastTrainings({ photos, labelledBy }: { photos: SiteImage[]; lab
           </>
         ) : null}
       </dialog>
-    </>
+    </Section>
   );
 }

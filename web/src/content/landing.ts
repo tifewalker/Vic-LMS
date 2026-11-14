@@ -310,7 +310,7 @@ export const trainingAreas = {
   ] satisfies TrainingArea[],
 } as const;
 
-/** "Who's behind the programme": Crystal Entrepreneurship Centre and OAUSTECH, then past trainings. */
+/** "Who's behind the programme": Crystal Entrepreneurship Centre and OAUSTECH. */
 export const behind = {
   kicker: "About Us",
   heading: "Who's Behind the Programme",
@@ -330,7 +330,16 @@ export const behind = {
     mottoLabel: "The university's motto",
     websiteLabel: "Official website",
   },
-  galleryHeading: "From Our Past Trainings",
+} as const;
+
+/** "From our past trainings": photo gallery of Crystal's past sessions. */
+export const pastTrainingsGallery = {
+  kicker: "Gallery",
+  heading: "From our past trainings",
+  intro: "Photos from training sessions run by Crystal Entrepreneurship Centre.",
+  viewAll: "View all photos",
+  /** The grid shows at most this many photos; the rest are reached through the lightbox. */
+  maxInGrid: 8,
 } as const;
 
 export const faq = {

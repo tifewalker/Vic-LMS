@@ -1,12 +1,11 @@
 import { PhotoFigure } from "@/components/ui/PhotoFigure";
 import { TextLink } from "@/components/ui/TextLink";
-import { imageSlots, pastTrainings } from "@/content/images";
+import { imageSlots } from "@/content/images";
 import { behind } from "@/content/landing";
 import { site } from "@/lib/site";
-import { PastTrainings } from "./PastTrainings";
 import { Section, SectionHeader } from "./Section";
 
-/** Who's behind the programme: Crystal Entrepreneurship Centre and OAUSTECH, then photos of past trainings. */
+/** Who's behind the programme: Crystal Entrepreneurship Centre and OAUSTECH side by side. */
 export function Behind() {
   const { crystal, oaustech } = behind;
   const websiteLabel = site.institution.website.replace(/^https?:\/\//, "");
@@ -57,12 +56,6 @@ export function Behind() {
         </article>
       </div>
 
-      <div className="mt-16 md:mt-24">
-        <h3 id="past-trainings-title" className="border-t border-line pt-5 text-[1.75rem] md:text-[2rem]">
-          {behind.galleryHeading}
-        </h3>
-        <PastTrainings photos={pastTrainings} labelledBy="past-trainings-title" />
-      </div>
     </Section>
   );
 }

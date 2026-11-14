@@ -4,6 +4,7 @@ import { ProgrammeTimeline } from "@/components/marketing/ProgrammeTimeline";
 import { ProgrammePictures } from "@/components/marketing/ProgrammePictures";
 import { TrainingAreas } from "@/components/marketing/TrainingAreas";
 import { Behind } from "@/components/marketing/Behind";
+import { PastTrainings } from "@/components/marketing/PastTrainings";
 import { Faq } from "@/components/marketing/Faq";
 import { FinalCta } from "@/components/marketing/FinalCta";
 
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <ProgrammePictures />
       <TrainingAreas />
       <Behind />
+      <PastTrainings />
       <Faq />
       <FinalCta />
     </main>

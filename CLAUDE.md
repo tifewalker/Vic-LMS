@@ -85,9 +85,10 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 3. **Programme structure:** a horizontal 26-week ruler/timeline, weeks 1 to 6 marked "Virtual" and 7 to 26 marked "Physical and practical at OAUSTECH". Stacks vertically on mobile. This is the visual centrepiece.
 4. **Programme in pictures:** asymmetric grid of six photos (stock plus the campus gate).
 5. **Training areas (8):** an index list (01 to 08) like a book's table of contents. Each row expands (accordion) to show its photo, topics and one short "What you will gain" line. Not a card grid.
-6. **Who's behind the programme** (`#about-us`): Crystal Entrepreneurship Centre and OAUSTECH (motto set large, library photo) side by side, then a "From our past trainings" gallery of Crystal's own photos with a lightbox (a horizontal snap strip on mobile).
-7. **FAQ:** accordion, six questions.
-8. **Final call to action and footer:** Already registered? Log in, activate link, contact, university website, location.
+6. **Who's behind the programme** (`#about-us`): Crystal Entrepreneurship Centre and OAUSTECH (motto set large, library photo) side by side.
+7. **From our past trainings** (`#past-trainings`): standard section header, one line of intro, then a uniform grid of Crystal's own photos, all 4:3 (2 columns on mobile, 3 on tablet, 4 from 1024px, max 1100px wide). At most 8 in the grid, with "View all photos" opening the lightbox if there are more. Never render a photo wider than its source; drop any that look blurry.
+8. **FAQ:** accordion, six questions.
+9. **Final call to action and footer:** Already registered? Log in, activate link, contact, university website, location.
 
 Removed for good (applications are closed): eligibility, the separate "Who should participate", "What you can expect to gain", and standalone "Why OAUSTECH" sections, and the certificate question.
 
