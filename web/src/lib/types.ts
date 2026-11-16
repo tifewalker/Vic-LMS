@@ -8,7 +8,12 @@ export type ClassItem = {
   starts_at: string;
   ends_at: string;
   youtube_url: string | null;
+  /** The 11-character YouTube video ID, extracted by the API from whatever link was pasted. */
+  youtube_id: string | null;
   recording_url: string | null;
+  recording_id: string | null;
+  /** How students' live class pages refresh: Supabase Realtime, or a refresh every 25 seconds. */
+  live_mode: "realtime" | "light";
   status: "scheduled" | "live" | "ended";
   programme?: { id?: string; title: string } | null;
   /** Only in tutor and admin responses. */

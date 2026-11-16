@@ -13,7 +13,7 @@ import { admin } from "../supabase.js";
 
 const THREAD_COLUMNS = "id, programme_id, class_id, author_id, kind, title, body, pinned, answered, created_at, hidden, hidden_at";
 const REPLY_COLUMNS = "id, thread_id, author_id, body, is_answer, created_at, hidden, hidden_at";
-const MESSAGE_COLUMNS = "id, class_id, author_id, body, is_question, answered, created_at, hidden, hidden_at";
+const MESSAGE_COLUMNS = "id, class_id, author_id, body, is_question, answered, pinned, pinned_at, reply_to, created_at, hidden, hidden_at";
 
 const threadBody = z.object({
   class_id: z.uuid().nullable().optional(),
@@ -23,8 +23,10 @@ const threadBody = z.object({
 });
 const replyBody = z.object({ body: z.string().trim().min(1, "Write something first.").max(10000) });
 const messageBody = z.object({
-  body: z.string().trim().min(1, "Write something first.").max(2000),
+  body: z.string().trim().min(1, "Write something first.").max(500, "Keep messages to 500 characters."),
   is_question: z.boolean().default(false),
+  /** A reply to another message in the same class. Tutors and admins only. */
+  reply_to: z.uuid().nullable().optional(),
 });
 
 /** For admins: which of these authors are muted, so the page can offer Unmute. */
@@ -172,16 +174,25 @@ export function registerCommunityRoutes(router: Router) {
     const id = idParam(req.params.id, res);
     if (!id) return;
     const cls = await classProgramme(id);
-    if (!cls || !(await programmeAccess(req.profile!, cls.programme_id))) return res.status(404).json({ error: "Not found." });
+    const access = cls && (await programmeAccess(req.profile!, cls.programme_id));
+    if (!cls || !access) return res.status(404).json({ error: "Not found." });
     if (refuseIfMuted(req.profile!, res)) return;
     const body = messageBody.safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
+    const { reply_to, ...fields } = body.data;
+    if (reply_to) {
+      if (!canTeach(access)) return res.status(403).json({ error: "Only tutors can reply to a message." });
+      const { data: parent } = await admin.from("live_messages").select("class_id").eq("id", reply_to).maybeSingle();
+      if (parent?.class_id !== id) return res.status(400).json({ error: "That message is not in this class." });
+    }
     const { data, error } = await admin
       .from("live_messages")
-      .insert({ class_id: id, author_id: req.profile!.id, ...body.data })
+      // Replies from tutors are answers, never questions.
+      .insert({ class_id: id, author_id: req.profile!.id, ...fields, is_question: reply_to ? false : fields.is_question, reply_to: reply_to ?? null })
       .select("id")
       .single();
     if (error) return res.status(500).json({ error: "Could not send." });
+    if (reply_to && isAdmin(req.profile!)) await logModeration(req.profile!.id, "reply", "live_message", reply_to);
     res.status(201).json({ id: data.id });
   });
 
@@ -197,5 +208,21 @@ export function registerCommunityRoutes(router: Router) {
     await admin.from("live_messages").update({ answered }).eq("id", id);
     if (isAdmin(req.profile!)) await logModeration(req.profile!.id, answered ? "mark_answered" : "mark_unanswered", "live_message", id);
     res.json({ answered });
+  });
+
+  /* Pin a message to the top of everyone's Q&A ("Pinned by tutor"), or unpin it. One pin per class: pinning replaces the previous one. */
+  router.post("/messages/:id/pin", async (req, res) => {
+    const id = idParam(req.params.id, res);
+    if (!id) return;
+    const { data: msg } = await admin.from("live_messages").select("id, class_id").eq("id", id).maybeSingle();
+    const cls = msg && (await classProgramme(msg.class_id));
+    if (!msg || !cls || !canTeach(await programmeAccess(req.profile!, cls.programme_id))) {
+      return res.status(403).json({ error: "Only tutors can pin messages." });
+    }
+    const pinned = req.body?.pinned !== false;
+    if (pinned) await admin.from("live_messages").update({ pinned: false, pinned_at: null }).eq("class_id", msg.class_id).eq("pinned", true).neq("id", id);
+    await admin.from("live_messages").update({ pinned, pinned_at: pinned ? new Date().toISOString() : null }).eq("id", id);
+    if (isAdmin(req.profile!)) await logModeration(req.profile!.id, pinned ? "pin" : "unpin", "live_message", id);
+    res.json({ pinned });
   });
 }

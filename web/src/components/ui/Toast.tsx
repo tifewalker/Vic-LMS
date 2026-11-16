@@ -8,7 +8,11 @@ type Toast = { id: number; message: string; tone: Tone; visible: boolean };
 
 const ToastContext = createContext<(message: string, tone?: Tone) => void>(() => {});
 
-/** Show a short notice in the bottom-right corner, e.g. toast("Saved."), toast(error, "error"). */
+/**
+ * Show a short notice in the bottom-right corner, e.g. toast("Saved."), toast(error, "error").
+ * Pages with a composer at the bottom (the live class screen) set <body data-toasts="top"> so
+ * notices never cover the Send button.
+ */
 export const useToast = () => useContext(ToastContext);
 
 /** Small notices for saved, sent and error messages. They fade in and out; no sliding. */
@@ -28,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2">
+      <div aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 [body[data-toasts=top]_&]:top-20 [body[data-toasts=top]_&]:bottom-auto lg:[body[data-toasts=top]_&]:top-4">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onClose={() => setToasts((all) => all.filter((x) => x.id !== t.id))} />
         ))}

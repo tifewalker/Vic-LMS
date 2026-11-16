@@ -22,6 +22,14 @@ Decided 2026-11-10. No paid services. Cloudflare Workers, R2, Upstash, Cron Trig
 - `pnpm email:test you@address` sends one test email through the configured provider.
 - The admin dashboard shows sent today against today's cap, queued counts, and failures and bounces from the last 24 hours.
 
+## Live classes: YouTube inside the app
+- Students watch the class in the app, in a `youtube-nocookie.com` embed. Tutors and admins teach on Zoom; students never see Zoom.
+- **Streams and recordings must be Unlisted, not Private**, and **embedding must be allowed** (YouTube Studio > the video > Details > Show more > Allow embedding). A Private video or one with embedding off shows an error in the player; the "Open on YouTube" link under it is the fallback.
+- Admins paste any YouTube link (watch, youtu.be, /live/, embed). The API stores the video ID (`youtube_id`, `recording_id`) next to a canonical watch link.
+- The player loads only from 10 minutes before the start, or when a student taps, to save data.
+- `live_mode` per class: `realtime` (Supabase Realtime) or `light` (Q&A and polls refresh every 25 seconds, no open connection). Tutors and admins always get realtime.
+- Poll changes and votes send a content-free broadcast on `polls:class:<id>`; pages then reload counts from the API (students cannot read each other's votes).
+
 ## Rate limiting
 - `express-rate-limit`, in memory, on login, activation and forgot password.
 

@@ -56,6 +56,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#f5f1e8",
+  // Android: the on-screen keyboard shrinks the layout (and 100dvh), so pinned composers stay visible.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

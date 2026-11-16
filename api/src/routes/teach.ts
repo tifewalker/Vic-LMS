@@ -8,7 +8,9 @@ import { liveClasses, tutorProgrammeIds, ungradedCount, unansweredCounts } from 
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
+import { registerPollRoutes } from "./polls.js";
 import { registerContentRoutes } from "./content.js";
+import { youtubeColumns, youtubeField } from "../lib/youtube.js";
 
 /** Tutor routes. Admins can use them too, for any programme. Mounted at /tutor. */
 export const teachRouter = Router();
@@ -113,14 +115,15 @@ teachRouter.patch("/classes/:id", async (req, res) => {
   if (!id) return;
   const body = z
     .object({
-      recording_url: z.union([z.literal(""), z.url("Use a full link starting with https://")]).transform((v) => v || null).optional(),
+      recording_url: youtubeField.optional(),
       status: z.enum(["scheduled", "live", "ended"]).optional(),
     })
     .safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
   const { data: cls } = await admin.from("classes").select("programme_id").eq("id", id).maybeSingle();
   if (!(await teaches(req, res, cls?.programme_id)) || !cls) return;
-  await admin.from("classes").update(body.data).eq("id", id);
+  const { recording_url, ...rest } = body.data;
+  await admin.from("classes").update({ ...rest, ...youtubeColumns("recording", recording_url) }).eq("id", id);
   res.json({ id });
 });
 
@@ -411,4 +414,5 @@ teachRouter.get("/nav", async (req, res) => {
 });
 
 registerCommunityRoutes(teachRouter);
+registerPollRoutes(teachRouter);
 registerContentRoutes(teachRouter);

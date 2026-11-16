@@ -8,6 +8,7 @@ import { dueCount, liveClasses, studentProgrammeIds } from "../lib/nav.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { registerCommunityRoutes } from "./community.js";
+import { registerPollRoutes } from "./polls.js";
 import { registerContentRoutes } from "./content.js";
 
 /**
@@ -282,4 +283,5 @@ learnRouter.get("/nav", async (req, res) => {
 });
 
 registerCommunityRoutes(learnRouter);
+registerPollRoutes(learnRouter);
 registerContentRoutes(learnRouter);

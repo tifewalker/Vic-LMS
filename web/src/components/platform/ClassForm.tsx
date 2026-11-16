@@ -18,6 +18,7 @@ type Draft = {
   zoom_passcode: string;
   recording_url: string;
   status: ClassItem["status"];
+  live_mode: ClassItem["live_mode"];
 };
 
 const fromClass = (c?: ClassItem): Draft => ({
@@ -30,6 +31,7 @@ const fromClass = (c?: ClassItem): Draft => ({
   zoom_passcode: c?.zoom_passcode ?? "",
   recording_url: c?.recording_url ?? "",
   status: c?.status ?? "scheduled",
+  live_mode: c?.live_mode ?? "realtime",
 });
 
 /** Create (programmeId) or edit (existing) a class. Admins only; uses the /admin API. */
@@ -70,16 +72,33 @@ export function ClassForm({
         <TextField label="Starts" type="datetime-local" value={d.starts_at} onChange={set("starts_at")} required />
         <TextField label="Ends" type="datetime-local" value={d.ends_at} onChange={set("ends_at")} required />
       </div>
-      <TextField label="YouTube link" hint="Students join here." type="url" placeholder="https://www.youtube.com/…" value={d.youtube_url} onChange={set("youtube_url")} />
+      <TextField
+        label="YouTube link"
+        hint="Students watch here, inside the app. Paste any YouTube link (watch, youtu.be, /live/ or embed). The stream must be Unlisted, not Private, with embedding allowed."
+        inputMode="url"
+        placeholder="https://youtu.be/…"
+        value={d.youtube_url}
+        onChange={set("youtube_url")}
+      />
       <div className="grid gap-6 sm:grid-cols-[2fr_1fr]">
         <TextField label="Zoom link" hint="Only tutors and admins see this." type="url" placeholder="https://zoom.us/j/…" value={d.zoom_url} onChange={set("zoom_url")} />
         <TextField label="Zoom passcode" hint="Tutors only." value={d.zoom_passcode} onChange={set("zoom_passcode")} />
       </div>
-      <TextField label="Recording link" hint="Add it after the class." type="url" value={d.recording_url} onChange={set("recording_url")} />
+      <TextField label="Recording link" hint="Add it after the class. Any YouTube link; Unlisted, with embedding allowed." inputMode="url" placeholder="https://youtu.be/…" value={d.recording_url} onChange={set("recording_url")} />
       <SelectField label="Status" value={d.status} onChange={set("status")} className="max-w-56">
         <option value="scheduled">Scheduled</option>
         <option value="live">Live now</option>
         <option value="ended">Ended</option>
+      </SelectField>
+      <SelectField
+        label="Live updates for students"
+        hint="Light mode refreshes Q&A and polls every 25 seconds instead of keeping a live connection. Use it when students are on weak or expensive data."
+        value={d.live_mode}
+        onChange={set("live_mode")}
+        className="max-w-72"
+      >
+        <option value="realtime">Realtime</option>
+        <option value="light">Light (refresh every 25 seconds)</option>
       </SelectField>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <div className="flex flex-wrap gap-3">

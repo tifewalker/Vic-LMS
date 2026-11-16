@@ -46,6 +46,7 @@ Migration `20261112000000_programmes_classes.sql` replaced the earlier batch mod
 - Threads and replies (programme-wide or per class), live Q&A messages, assessments (digital or paper, optional PDF/Word brief), submissions (one per student, resubmit until graded, late after the deadline) and grades (hidden from students until released).
 - RLS: a user reads a programme's rows only if enrolled as a student or tutor, or an admin. Students read only their own submissions and released grades. All writes go through the API.
 - Realtime on `live_messages`, `threads` and `replies`; the web app subscribes directly and RLS applies.
+- Polls per class (`polls`, `poll_options`, `poll_votes`, one vote per student): enrolled users read polls and options (drafts only tutors and admins); students read only their own vote. All writes go through the API. Live Q&A messages can be pinned by tutors and admins, and replies point at the message they answer (`reply_to`).
 - Files: private `files` bucket, PDF/DOC/DOCX up to 10 MB, signed upload and download URLs from the API.
 - Suspend bans the user in Supabase Auth and blocks the API; reactivate lifts the ban. Only a super_admin can change admins.
 

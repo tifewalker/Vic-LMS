@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { ASSESSMENT_COLUMNS, CLASS_COLUMNS, idParam, zodMessage } from "../lib/access.js";
 import { embed } from "../lib/invites.js";
+import { youtubeColumns, youtubeField } from "../lib/youtube.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 
@@ -227,13 +228,20 @@ const classFields = z.object({
     description: z.string().trim().max(5000).optional(),
     starts_at: z.iso.datetime({ offset: true, message: "Choose a start time." }),
     ends_at: z.iso.datetime({ offset: true, message: "Choose an end time." }),
-    youtube_url: url.optional(),
-    recording_url: url.optional(),
+    // Any YouTube link (watch, youtu.be, /live/, embed); stored as the video ID plus a watch link.
+    youtube_url: youtubeField.optional(),
+    recording_url: youtubeField.optional(),
     status: z.enum(["scheduled", "live", "ended"]).optional(),
+    live_mode: z.enum(["realtime", "light"]).optional(),
     zoom_url: url.optional(),
     zoom_passcode: z.string().trim().max(100).optional(),
 });
 const classBody = classFields.refine((c) => new Date(c.ends_at) > new Date(c.starts_at), "The class must end after it starts.");
+
+/** Class columns from a parsed body: YouTube fields become an ID plus a canonical link. */
+function classColumns({ youtube_url, recording_url, ...rest }: Partial<z.infer<typeof classFields>>) {
+  return { ...rest, ...youtubeColumns("youtube", youtube_url), ...youtubeColumns("recording", recording_url) };
+}
 
 async function saveZoom(classId: string, zoom_url: string | null | undefined, zoom_passcode: string | undefined) {
   if (zoom_url === undefined && zoom_passcode === undefined) return;
@@ -248,8 +256,8 @@ programmesRouter.post("/programmes/:id/classes", async (req, res) => {
   if (!id) return;
   const body = classBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-  const { zoom_url, zoom_passcode, ...cls } = body.data;
-  const { data, error } = await admin.from("classes").insert({ ...cls, programme_id: id }).select("id").single();
+  const { zoom_url, zoom_passcode, ...fields } = body.data;
+  const { data, error } = await admin.from("classes").insert({ ...classColumns(fields), programme_id: id }).select("id").single();
   if (error) return res.status(error.code === "23503" ? 404 : 500).json({ error: error.code === "23503" ? "Programme not found." : "Could not create the class." });
   await saveZoom(data.id, zoom_url, zoom_passcode);
   res.status(201).json({ id: data.id });
@@ -271,7 +279,8 @@ programmesRouter.patch("/classes/:id", async (req, res) => {
   if (!id) return;
   const body = classFields.partial().safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-  const { zoom_url, zoom_passcode, ...cls } = body.data;
+  const { zoom_url, zoom_passcode, ...fields } = body.data;
+  const cls = classColumns(fields);
   if (Object.keys(cls).length) {
     const { data, error } = await admin.from("classes").update(cls).eq("id", id).select("id");
     if (error) return res.status(400).json({ error: error.code === "23514" ? "The class must end after it starts." : "Could not save the class." });

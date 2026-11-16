@@ -15,7 +15,7 @@ import { formatDateTime } from "@/lib/dates";
 import { useModerationSignal } from "@/lib/realtime";
 import { supabase } from "@/lib/supabase";
 import type { People } from "@/lib/types";
-import { MUTED_NOTICE } from "./LiveQA";
+import { MUTED_NOTICE } from "./live/QAPanel";
 import { useMe } from "./RequireRole";
 import { useModeration } from "./useModeration";
 
