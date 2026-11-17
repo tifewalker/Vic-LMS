@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { StatusLabel } from "@/components/ui/StatusLabel";
 import { cx } from "@/lib/cx";
 import type { ClassItem } from "@/lib/types";
@@ -17,8 +18,6 @@ export function classPhase(c: Pick<ClassItem, "status" | "starts_at" | "ends_at"
   return now >= Date.parse(c.starts_at) ? "live" : "before";
 }
 
-export const embedUrl = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
-export const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
 /** A clock that ticks every second in the hour before the start, otherwise every 30 seconds. */
 export function useNow(startsAt: string) {
@@ -53,24 +52,261 @@ function countdown(ms: number) {
   return `in ${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-function Frame({ id, title }: { id: string; title: string }) {
+/* ---- YouTube IFrame API, loaded once per page ---- */
+
+type YTPlayer = {
+  playVideo(): void;
+  pauseVideo(): void;
+  mute(): void;
+  unMute(): void;
+  isMuted(): boolean;
+  getPlayerState(): number;
+  getCurrentTime(): number;
+  getDuration(): number;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  getIframe(): HTMLIFrameElement;
+  destroy(): void;
+};
+type YTNamespace = {
+  Player: new (
+    el: HTMLElement,
+    opts: {
+      host: string;
+      videoId: string;
+      playerVars: Record<string, number>;
+      events: { onReady: () => void; onStateChange: (e: { data: number }) => void; onError: () => void };
+    },
+  ) => YTPlayer;
+};
+declare global {
+  interface Window {
+    YT?: YTNamespace;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+const PLAYING = 1;
+const BUFFERING = 3;
+let apiLoading: Promise<YTNamespace> | null = null;
+
+function loadYouTubeApi(): Promise<YTNamespace> {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  apiLoading ??= new Promise((resolve, reject) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previous?.();
+      if (window.YT) resolve(window.YT);
+    };
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => {
+      apiLoading = null;
+      reject(new Error("YouTube player did not load"));
+    };
+    document.head.appendChild(script);
+  });
+  return apiLoading;
+}
+
+const clock = (s: number) => {
+  const t = Math.max(0, Math.floor(s));
+  const h = Math.floor(t / 3600);
+  const mm = String(Math.floor((t % 3600) / 60)).padStart(h ? 2 : 1, "0");
+  const ss = String(t % 60).padStart(2, "0");
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+};
+
+const controlButton = "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-paper/15 focus-visible:outline-2 focus-visible:outline-paper";
+
+/**
+ * The YouTube player with YouTube's own controls switched off and a layer on top that takes
+ * every click, so students cannot use YouTube's title link, "Copy link", share or logo to
+ * leave the app with the link. Our own controls sit at the bottom: play or pause, sound,
+ * a seek bar for recordings, and full screen. Note: the video ID still reaches the browser,
+ * so a determined person with developer tools can find it; this removes the easy ways.
+ */
+function Frame({ id, title, live }: { id: string; title: string; live: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState(-1);
+  const [muted, setMuted] = useState(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  // Frame renders only in the browser (class data is fetched there), so document is available.
+  const [canFullscreen] = useState(() => typeof document !== "undefined" && Boolean(document.fullscreenEnabled));
+  const [fullscreen, setFullscreen] = useState(false);
+  const playing = state === PLAYING || state === BUFFERING;
+
+  useEffect(() => {
+    let cancelled = false;
+    let player: YTPlayer | null = null;
+    const mount = document.createElement("div");
+    hostRef.current?.appendChild(mount);
+    loadYouTubeApi()
+      .then((YT) => {
+        if (cancelled) return;
+        player = new YT.Player(mount, {
+          host: "https://www.youtube-nocookie.com",
+          videoId: id,
+          // controls 0: no YouTube control bar or logo link. disablekb: no YouTube shortcuts.
+          playerVars: { controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, playsinline: 1, modestbranding: 1 },
+          events: {
+            onReady: () => {
+              if (cancelled || !player) return;
+              playerRef.current = player;
+              setReady(true);
+              setDuration(player.getDuration());
+            },
+            onStateChange: (e) => setState(e.data),
+            onError: () => setFailed(true),
+          },
+        });
+      })
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+      playerRef.current = null;
+      player?.destroy();
+      mount.remove();
+    };
+  }, [id]);
+
+  // The iframe YouTube creates gets a proper title for screen readers, and cannot take focus:
+  // keyboard users use our controls instead.
+  useEffect(() => {
+    const frame = ready ? playerRef.current?.getIframe() : null;
+    if (!frame) return;
+    frame.title = title;
+    frame.tabIndex = -1;
+  }, [ready, title]);
+
+  // Recording position, once a second while it plays.
+  useEffect(() => {
+    if (live || state !== PLAYING) return;
+    const timer = window.setInterval(() => {
+      const p = playerRef.current;
+      if (!p) return;
+      setTime(p.getCurrentTime());
+      setDuration(p.getDuration());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [live, state]);
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(document.fullscreenElement === wrapRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function togglePlay() {
+    const p = playerRef.current;
+    if (!p) return;
+    if (p.getPlayerState() === PLAYING) return p.pauseVideo();
+    p.playVideo();
+    // Some phones only start a video from outside the frame when it is muted. If it has not
+    // started after a moment, start it muted; the sound button turns it back on.
+    window.setTimeout(() => {
+      const q = playerRef.current;
+      if (!q || [PLAYING, BUFFERING].includes(q.getPlayerState())) return;
+      q.mute();
+      setMuted(true);
+      q.playVideo();
+    }, 1500);
+  }
+
+  function toggleMute() {
+    const p = playerRef.current;
+    if (!p) return;
+    if (p.isMuted()) p.unMute();
+    else p.mute();
+    setMuted(!p.isMuted());
+  }
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else wrapRef.current?.requestFullscreen().catch(() => {});
+  }
+
+  if (failed) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
+        <p className="max-w-sm text-ui-sm">This video cannot play here. Refresh the page, or ask the tutor to check the video allows embedding.</p>
+      </div>
+    );
+  }
+
   return (
-    <iframe
-      src={embedUrl(id)}
-      title={title}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      referrerPolicy="strict-origin-when-cross-origin"
-      allowFullScreen
-      className="absolute inset-0 size-full border-0"
-    />
+    <div ref={wrapRef} className="absolute inset-0 bg-ink text-paper">
+      <div ref={hostRef} aria-hidden={!ready || undefined} className="absolute inset-0 [&>iframe]:size-full [&>iframe]:border-0" />
+
+      {/* Takes every click on the video, so nothing inside YouTube's frame can be used. */}
+      <div className="absolute inset-0 z-10 cursor-pointer" onClick={togglePlay} aria-hidden="true" />
+
+      {/* While stopped YouTube shows its title bar with "Copy link" at the top: cover it. */}
+      {!playing ? <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-ink" aria-hidden="true" /> : null}
+
+      {ready && !playing ? (
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={state === -1 || state === 5 ? "Play" : "Resume"}
+          className="absolute top-1/2 left-1/2 z-20 flex size-16 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm bg-ink/80 hover:bg-ink focus-visible:outline-2 focus-visible:outline-paper"
+        >
+          <Play aria-hidden="true" className="size-8" fill="currentColor" />
+        </button>
+      ) : null}
+
+      <div className="absolute inset-x-0 bottom-0 z-20 flex h-11 items-center gap-1 bg-ink/85 px-1">
+        <button type="button" onClick={togglePlay} disabled={!ready} aria-label={playing ? "Pause" : "Play"} className={controlButton}>
+          {playing ? <Pause aria-hidden="true" className="size-5" /> : <Play aria-hidden="true" className="size-5" />}
+        </button>
+        <button type="button" onClick={toggleMute} disabled={!ready} aria-label={muted ? "Turn sound on" : "Mute"} aria-pressed={muted} className={controlButton}>
+          {muted ? <VolumeX aria-hidden="true" className="size-5" /> : <Volume2 aria-hidden="true" className="size-5" />}
+        </button>
+        {live ? (
+          <span className="flex-1 px-2 text-ui-xs font-semibold tracking-wide uppercase">Live</span>
+        ) : (
+          <>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(1, Math.floor(duration))}
+              step={1}
+              value={Math.floor(time)}
+              disabled={!ready || !duration}
+              onChange={(e) => {
+                const s = Number(e.target.value);
+                setTime(s);
+                playerRef.current?.seekTo(s, true);
+              }}
+              aria-label="Position in the recording"
+              aria-valuetext={`${clock(time)} of ${clock(duration)}`}
+              className="h-11 min-w-0 flex-1 cursor-pointer accent-paper"
+            />
+            <span className="shrink-0 px-1 text-ui-xs tabular-nums">
+              {clock(time)} / {clock(duration)}
+            </span>
+          </>
+        )}
+        {canFullscreen ? (
+          <button type="button" onClick={toggleFullscreen} aria-label={fullscreen ? "Exit full screen" : "Full screen"} className={controlButton}>
+            {fullscreen ? <Minimize aria-hidden="true" className="size-5" /> : <Maximize aria-hidden="true" className="size-5" />}
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
 /**
- * The class video: a 16:9 YouTube embed (youtube-nocookie). Before the class it shows the
- * start time and a countdown, and loads the player only from 10 minutes before the start or
- * when the viewer taps. During the class: the stream and a calm "Live now" label. After: the
- * recording, or a note that it will appear. A plain "Open on YouTube" link sits underneath.
+ * The class video: a 16:9 YouTube embed (youtube-nocookie) with our own controls. Before the
+ * class it shows the start time and a countdown, and loads the player only from 10 minutes
+ * before the start or when the viewer taps. During the class: the stream and a calm "Live now"
+ * label. After: the recording, or a note that it will appear. No link to YouTube is shown.
  */
 /** `heading` (phones): the class title, set in the row under the player to save height. */
 export function Player({ cls, compact = false, capHeight = false, heading }: { cls: ClassItem; compact?: boolean; capHeight?: boolean; heading?: React.ReactNode }) {
@@ -94,7 +330,7 @@ export function Player({ cls, compact = false, capHeight = false, heading }: { c
         )}
       >
         {showFrame && videoId ? (
-          <Frame id={videoId} title={title} />
+          <Frame key={videoId} id={videoId} title={title} live={phase !== "after"} />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
             {phase === "before" ? (
@@ -129,17 +365,6 @@ export function Player({ cls, compact = false, capHeight = false, heading }: { c
         <span className="flex shrink-0 items-center gap-2">
           {phase === "live" ? <StatusLabel status="live" /> : phase === "after" ? <StatusLabel status="ended" label={cls.recording_id ? "Recording" : "Ended"} /> : null}
         </span>
-        {videoId ? (
-          <a
-            href={watchUrl(videoId)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 shrink-0 items-center text-ui-xs font-semibold text-accent-strong underline decoration-accent/40 underline-offset-[0.22em] hover:decoration-accent-strong lg:min-h-0"
-          >
-            Open on YouTube
-            <span className="sr-only"> (opens in a new tab)</span>
-          </a>
-        ) : null}
       </div>
     </div>
   );

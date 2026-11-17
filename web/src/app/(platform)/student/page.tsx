@@ -51,8 +51,8 @@ function NextClass({ c }: { c: ClassItem | null }) {
       {c.programme ? <p className="text-ui-sm text-ink-muted">{c.programme.title}</p> : null}
       <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         {live && c.youtube_url ? (
-          <ButtonLink href={c.youtube_url} external className="h-12 px-6 text-ui-md">
-            Join class on YouTube
+          <ButtonLink href={`/class/?id=${c.id}`} className="h-12 px-6 text-ui-md">
+            Join class
           </ButtonLink>
         ) : (
           <span className="text-ui-sm text-ink-muted">{c.youtube_url ? "The Join button appears here when the class goes live." : "The joining link will appear here before the class."}</span>
