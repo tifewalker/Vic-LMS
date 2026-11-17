@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "seed:admin": "tsx --env-file-if-exists=.env src/scripts/seed-admin.ts",
+    "seed:demo": "tsx --env-file-if-exists=.env src/scripts/seed-demo.ts",
     "email:test": "tsx --env-file-if-exists=.env src/scripts/email-test.ts"
   },
   "engines": {

@@ -26,3 +26,6 @@ npm-debug.log*
 
 # local scratch scripts
 *.tmp.mjs
+
+# database backups and generated demo logins (never commit)
+backups/
