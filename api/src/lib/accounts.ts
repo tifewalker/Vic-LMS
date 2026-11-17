@@ -1,35 +1,40 @@
 import { admin, type Role } from "../supabase.js";
 
 /**
- * Creates an invited account: an unconfirmed auth user with no password, then the
- * profile, the role row (student or tutor) and a pending invitation. If any database
- * step fails, the auth user is deleted again so nothing is left half made.
+ * Creates an active account that can sign in straight away: a confirmed auth user with the
+ * given password, then the profile and the role row (student or tutor). No email is sent.
+ * Students use their matric number as the password; admins set it for tutors and admins.
+ * If any database step fails, the auth user is deleted again so nothing is left half made.
  */
-export async function createInvitedAccount(input: {
+export async function createAccount(input: {
   role: Role;
   full_name: string;
   email: string;
+  password: string;
   matric_no?: string;
-}): Promise<{ ok: true; profileId: string; invitationId: string; tutor_id?: string } | { ok: false; reason: string }> {
+}): Promise<{ ok: true; profileId: string; tutor_id?: string } | { ok: false; reason: string }> {
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email: input.email,
-    email_confirm: false,
+    password: input.password,
+    email_confirm: true,
     user_metadata: { full_name: input.full_name },
   });
   if (authErr || !created.user) {
-    const exists = /already|registered|exists/i.test(authErr?.message ?? "");
-    return { ok: false, reason: exists ? "An account with this email already exists." : "Could not create the account." };
+    const msg = authErr?.message ?? "";
+    if (/already|registered|exists/i.test(msg)) return { ok: false, reason: "An account with this email already exists." };
+    if (/password/i.test(msg)) return { ok: false, reason: `The password was not accepted: ${msg}` };
+    return { ok: false, reason: "Could not create the account." };
   }
   const id = created.user.id;
 
   const fail = async (reason: string) => {
-    await admin.auth.admin.deleteUser(id); // cascades to profile, role rows and invitation
+    await admin.auth.admin.deleteUser(id); // cascades to profile and role rows
     return { ok: false as const, reason };
   };
 
   const { error: profileErr } = await admin
     .from("profiles")
-    .insert({ id, role: input.role, full_name: input.full_name, email: input.email, status: "invited" });
+    .insert({ id, role: input.role, full_name: input.full_name, email: input.email, status: "active" });
   if (profileErr) return fail("Could not create the profile.");
 
   let tutor_id: string | undefined;
@@ -42,14 +47,7 @@ export async function createInvitedAccount(input: {
     tutor_id = data.tutor_id;
   }
 
-  const { data: inv, error: invErr } = await admin
-    .from("invitations")
-    .insert({ profile_id: id, status: "pending" })
-    .select("id")
-    .single();
-  if (invErr || !inv) return fail("Could not create the invitation.");
-
-  return { ok: true, profileId: id, invitationId: inv.id, tutor_id };
+  return { ok: true, profileId: id, tutor_id };
 }
 
 /** Emails that already have a profile. */

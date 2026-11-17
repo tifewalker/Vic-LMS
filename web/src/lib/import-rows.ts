@@ -47,6 +47,8 @@ export function checkSheet(sheet: unknown[][]): PreviewRow[] {
     const problems: string[] = [];
 
     if (!matric_no) problems.push("Matric number is missing.");
+    // Same rule as the API: the matric number is the first password, which needs 6 characters.
+    else if (matric_no.length < 6) problems.push("Matric number is too short to use as a password (at least 6 characters).");
     if (!full_name) problems.push("Full name is missing.");
     if (!email) problems.push("Email is missing.");
     else if (!EMAIL.test(email)) problems.push("Email is not valid.");

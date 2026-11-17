@@ -2,12 +2,14 @@
  * Demo accounts for testing: 3 tutors and 100 students, activated and enrolled in the
  * 8 programmes. Classes and content are left to the admins.
  *
- * Usage: pnpm seed:demo   (SEED_TEST_PASSWORD: shared password for every demo account)
+ * Usage: pnpm seed:demo
+ *   SEED_TEST_PASSWORD  shared password for the demo tutors (admins set tutor passwords).
+ *   Students log in with their matric number as both login and password, as real students do.
  *
  * Rerunnable: it deletes only the exact example.com accounts it generates, then recreates
  * them. Programmes are kept as they are; any of the 8 that is missing is created.
  *
- * Writes the logins to backups/demo-credentials.csv (gitignored). The password is not written.
+ * Writes the logins to backups/demo-credentials.csv (gitignored). The tutor password is not written.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -178,28 +180,23 @@ const programmeId = SLUGS.map((s) => programmeRows.find((r) => r.slug === s)!.id
 
 /* -------------------------------------------------------------- accounts */
 
-/** An active, confirmed account with the shared password and an activated invitation. */
-async function createAccount(role: "student" | "tutor", fullName: string, email: string): Promise<string> {
+/** An active, confirmed account, the same as the admin screens create. */
+async function createAccount(role: "student" | "tutor", fullName: string, email: string, accountPassword: string): Promise<string> {
   const { data, error } = await admin.auth.admin.createUser({
     email,
-    password,
+    password: accountPassword,
     email_confirm: true,
     user_metadata: { full_name: fullName },
   });
   if (error || !data.user) fail(`Create ${email}: ${error?.message}`);
   const id = data.user.id;
   await check(`Profile ${email}`, admin.from("profiles").insert({ id, role, full_name: fullName, email, status: "active" }));
-  const now = new Date().toISOString();
-  await check(
-    `Invitation ${email}`,
-    admin.from("invitations").insert({ profile_id: id, status: "activated", used_at: now, last_sent_at: now }),
-  );
   return id;
 }
 
 const tutorProfile: string[] = [];
 for (const t of tutors) {
-  const id = await createAccount("tutor", t.name, t.email);
+  const id = await createAccount("tutor", t.name, t.email, password);
   // Insert with the sequence default first, so the sequence moves past the fixed IDs and a
   // tutor created later through the API never gets VEC-TUT-0001 to 0003.
   await check(`Tutor row ${t.email}`, admin.from("tutors").insert({ profile_id: id }));
@@ -213,7 +210,7 @@ await check(
 );
 
 const studentProfile = await pool(students, 5, async (s) => {
-  const id = await createAccount("student", s.name, s.email);
+  const id = await createAccount("student", s.name, s.email, s.matric);
   await check(`Student row ${s.email}`, admin.from("students").insert({ profile_id: id, matric_no: s.matric }));
   return id;
 });

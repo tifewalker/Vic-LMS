@@ -27,6 +27,8 @@ export function validateRows(input: unknown[]): { valid: (ImportRow & { row: num
 
     if (!matric) messages.push("Matric number is missing.");
     else if (matric.length > 40) messages.push("Matric number is too long.");
+    // The matric number is the student's first password, and passwords need at least 6 characters.
+    else if (matric.length < 6) messages.push("Matric number is too short to use as a password (at least 6 characters).");
     if (!name) messages.push("Full name is missing.");
     else if (name.length > 120) messages.push("Full name is too long.");
     if (!email) messages.push("Email is missing.");

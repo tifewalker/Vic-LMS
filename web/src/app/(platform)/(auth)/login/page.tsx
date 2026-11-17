@@ -9,8 +9,6 @@ import { storeSession } from "@/lib/supabase";
 
 type LoginResponse = { session: { access_token: string; refresh_token: string }; profile: { role: Role } };
 
-const linkClass = "text-ui-sm font-semibold text-accent-strong underline decoration-accent/40 underline-offset-[0.22em] hover:decoration-accent-strong";
-
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -35,26 +33,16 @@ export default function LoginPage() {
     <>
       <p className="ui-label">Training platform</p>
       <h1 className="mt-1 font-serif text-ui-xl">Sign in</h1>
-      <p className="mt-2 text-ink-muted">Use the details from your invitation email.</p>
+      <p className="mt-2 text-ink-muted">Students use their matric number. Tutors use their tutor ID or email.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
         <TextField label="Email, matric number or tutor ID" name="identifier" autoComplete="username" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
         <PasswordField label="Password" name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Button type="submit" loading={busy} loadingText="Signing in…" disabled={!identifier || !password}>
-            Sign in
-          </Button>
-          <a href="/forgot-password/" className={linkClass}>
-            Forgot password
-          </a>
-        </div>
+        <Button type="submit" loading={busy} loadingText="Signing in…" disabled={!identifier || !password}>
+          Sign in
+        </Button>
       </form>
-      <p className="mt-8 border-t border-line pt-6 text-ui-sm text-ink-muted">
-        First time here?{" "}
-        <a href="/activate-account/" className={linkClass}>
-          Activate your account
-        </a>
-      </p>
+      <p className="mt-8 border-t border-line pt-6 text-ui-sm text-ink-muted">Forgotten your password? Ask the programme admin to reset it.</p>
     </>
   );
 }

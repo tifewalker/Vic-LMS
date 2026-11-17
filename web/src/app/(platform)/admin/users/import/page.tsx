@@ -15,7 +15,6 @@ type ImportResult = {
   created: number;
   skipped: { row: number; reason: string }[];
   errors: { row: number; messages: string[] }[];
-  invites: { sent: number; failed: number; stillPending: number };
   enrolled: { added: number } | null;
 };
 type ProgrammeOption = { id: string; title: string; is_active: boolean };
@@ -78,7 +77,7 @@ export default function ImportPage() {
       <PageHeader
         kicker="People"
         title="Import students"
-        description="Upload a .csv or .xlsx file with matric_no, full_name and email. You see a preview before anything is saved."
+        description="Upload a .csv or .xlsx file with matric_no, full_name and email. You see a preview before anything is saved. Students log in with their matric number, which is also their first password. No emails are sent."
         actions={
           <ButtonLink href="/templates/students-template.csv" download variant="secondary">
             Download CSV template
@@ -153,11 +152,8 @@ export default function ImportPage() {
         <section className="mt-12 max-w-3xl space-y-6" aria-labelledby="result-title">
           <SectionTitle id="result-title">Import finished</SectionTitle>
           <Notice tone="success">
-            Created {result.data.created} student{result.data.created === 1 ? "" : "s"}. Sent {result.data.invites.sent} invite
-            {result.data.invites.sent === 1 ? "" : "s"}.{result.data.enrolled ? ` Enrolled ${result.data.enrolled.added} in the programme.` : ""}
-            {result.data.invites.stillPending
-              ? ` ${result.data.invites.stillPending} invites are waiting for tomorrow's email allowance; use Send pending invites on the Users page.`
-              : ""}
+            Created {result.data.created} student{result.data.created === 1 ? "" : "s"}. They can log in now with their matric number as both login and password.
+            {result.data.enrolled ? ` Enrolled ${result.data.enrolled.added} in the programme.` : ""}
           </Notice>
           {notImported.length ? (
             <div>

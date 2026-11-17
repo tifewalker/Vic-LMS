@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
 import { cx } from "@/lib/cx";
 
 type Tab = "student" | "tutor" | "admin";
-type Status = "" | "invited" | "active" | "suspended";
+type Status = "" | "active" | "suspended";
 type User = {
   id: string;
   role: string;
@@ -25,17 +25,14 @@ type User = {
   status: "invited" | "active" | "suspended";
   matric_no: string | null;
   tutor_id: string | null;
-  invitation: { id: string; status: string; attempts: number; last_sent_at: string | null } | null;
 };
-type ListResponse = { users: User[]; total: number; page: number; pageSize: number; emailsRemainingToday: number };
-
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
+type ListResponse = { users: User[]; total: number; page: number; pageSize: number };
 
 function readParams(): { role: Tab; status: Status } {
   if (typeof window === "undefined") return { role: "student", status: "" };
   const p = new URLSearchParams(window.location.search);
   const role = (["student", "tutor", "admin"].includes(p.get("role") ?? "") ? p.get("role") : "student") as Tab;
-  const status = (["invited", "active", "suspended"].includes(p.get("status") ?? "") ? p.get("status") : "") as Status;
+  const status = (["active", "suspended"].includes(p.get("status") ?? "") ? p.get("status") : "") as Status;
   return { role, status };
 }
 
@@ -71,22 +68,17 @@ export default function UsersPage() {
     };
   }, [role, status, search, page, reloadKey]);
 
-  async function resend(u: User) {
-    setBusy(u.invitation!.id);
-    const res = await api<{ message: string }>(`/admin/invitations/${u.invitation!.id}/resend`, { method: "POST" });
+  async function resetToMatric(u: User) {
+    const ok = await confirm({
+      title: `Reset ${u.full_name}'s password?`,
+      body: `Their password goes back to their matric number, ${u.matric_no}. Anyone signed in on their account stays signed in until their session ends.`,
+      confirmLabel: "Reset password",
+    });
+    if (!ok) return;
+    setBusy(u.id);
+    const res = await api<{ id: string }>(`/admin/users/${u.id}/password`, { body: {} });
     setBusy(null);
-    toast(res.ok ? res.data.message : res.error, res.ok ? "success" : "error");
-    load();
-  }
-
-  async function sendPending() {
-    setBusy("pending");
-    const res = await api<{ sent: number; failed: number; stillPending: number }>("/admin/invitations/send-pending", { method: "POST" });
-    setBusy(null);
-    if (res.ok) {
-      toast(`Sent ${res.data.sent} invite${res.data.sent === 1 ? "" : "s"}.${res.data.failed ? ` ${res.data.failed} could not be sent.` : ""} ${res.data.stillPending} still waiting.`);
-    } else toast(res.error, "error");
-    load();
+    toast(res.ok ? `${u.full_name}'s password is their matric number again.` : res.error, res.ok ? "success" : "error");
   }
 
   async function setSuspended(u: User, suspend: boolean) {
@@ -103,6 +95,8 @@ export default function UsersPage() {
 
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const canChange = (u: User) => u.id !== me.id && (u.role === "student" || u.role === "tutor" || me.role === "super_admin");
+  const canSetPassword = (u: User) => u.role === "student" || u.role === "tutor" || me.role === "super_admin" || u.id === me.id;
+  const passwordHref = (u: User) => `/admin/users/password/?${new URLSearchParams({ id: u.id, name: u.full_name })}`;
   const addAction =
     role === "student" ? (
       <ButtonLink href="/admin/users/import/">Import students</ButtonLink>
@@ -118,15 +112,8 @@ export default function UsersPage() {
       <PageHeader
         kicker="People"
         title="Users"
-        description={data ? `${data.total} ${data.total === 1 ? "person" : "people"} · ${data.emailsRemainingToday} emails left today` : "Students, tutors and admins."}
-        actions={
-          <>
-            <Button variant="secondary" onClick={sendPending} loading={busy === "pending"} loadingText="Sending…">
-              Send pending invites
-            </Button>
-            {addAction}
-          </>
-        }
+        description={data ? `${data.total} ${data.total === 1 ? "person" : "people"}` : "Students, tutors and admins."}
+        actions={addAction}
       />
 
       <div className="mt-6">
@@ -174,7 +161,6 @@ export default function UsersPage() {
             className={cx(controlClass, "mt-2 h-11 cursor-pointer")}
           >
             <option value="">All</option>
-            <option value="invited">Not activated</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
@@ -224,32 +210,20 @@ export default function UsersPage() {
               ),
             },
             {
-              key: "invite",
-              header: "Invite",
-              cell: (u) =>
-                u.invitation ? (
-                  <span className="inline-flex flex-col items-end gap-1 md:items-start">
-                    <StatusLabel status={u.invitation.status} />
-                    <span className="text-ui-xs text-ink-muted">
-                      {u.invitation.attempts} {u.invitation.attempts === 1 ? "send" : "sends"}
-                      {u.invitation.last_sent_at ? `, last ${fmt(u.invitation.last_sent_at)}` : ""}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-ink-muted">None</span>
-                ),
-            },
-            {
               key: "actions",
               header: "Actions",
               hiddenHeader: true,
               className: "md:text-right",
               cell: (u) => (
                 <span className="inline-flex flex-wrap justify-end gap-x-5 gap-y-2">
-                  {u.invitation && u.invitation.status !== "activated" && u.status !== "suspended" ? (
-                    <Button variant="quiet" onClick={() => resend(u)} loading={busy === u.invitation.id} loadingText="Sending…">
-                      Resend invite
+                  {canSetPassword(u) && u.role === "student" && u.matric_no ? (
+                    <Button variant="quiet" onClick={() => resetToMatric(u)} loading={busy === u.id} loadingText="Resetting…">
+                      Reset password
                     </Button>
+                  ) : canSetPassword(u) && u.role !== "student" ? (
+                    <ButtonLink variant="quiet" href={passwordHref(u)}>
+                      Set password
+                    </ButtonLink>
                   ) : null}
                   {canChange(u) ? (
                     <Button variant="quiet" onClick={() => setSuspended(u, u.status !== "suspended")}>

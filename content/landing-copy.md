@@ -21,8 +21,6 @@ From learning how to build a business and use digital tools to exploring artific
 
 [LOG IN TO YOUR DASHBOARD]
 
-First time here? [Activate your account]
-
 Location: OAUSTECH, Okitipupa, Ondo State, Nigeria
 
 ---
@@ -345,7 +343,7 @@ Certificate arrangements should be confirmed by the programme organisers. Please
 
 ### 7. How do I access the programme?
 
-Applications for this cohort have closed. Registered participants can log in with their matric number or email. If you have not activated your account yet, use Activate your account.
+Applications for this cohort have closed. Registered participants can log in with their matric number. If you cannot log in, contact the programme team on +234 703 203 8565.
 
 ### 8. Who can I contact for enquiries?
 
@@ -359,7 +357,6 @@ Log in to see your classes, materials and assessments.
 
 [LOG IN]
 
-First time here? [Activate your account]
 
 **Programme:** Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme  
 **Duration:** 26 Weeks  

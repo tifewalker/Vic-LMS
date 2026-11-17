@@ -2,6 +2,14 @@
 
 Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 
+> **Changed 2026-11-17 (client decision): no activation and no email.** Accounts are created active and can sign in straight away.
+> - Students: created by import; their first password is their matric number (stored trimmed and uppercase; the login also accepts it in any case and with stray spaces). Matric numbers need at least 6 characters for this.
+> - Tutors and admins: the admin sets the password on the Add tutor / Add admin form.
+> - Resets: `POST /admin/users/:id/password` from the Users page. A student with no password given goes back to their matric number; tutors and admins get the password the admin types. Only a super_admin changes an admin's password.
+> - Removed: `/auth/activate`, `/auth/forgot-password`, `/auth/request-activation`, `/admin/invitations/*`, the `/activate`, `/activate-account`, `/forgot-password` and `/reset-password` pages, and the email outbox timer. The `invitations`, `email_log` and `email_queue` tables stay in the schema but are no longer written.
+>
+> The sections below describe the original invitation design and are kept for reference.
+
 ## Database (`api/supabase/migrations`)
 - **profiles**: id (= auth.users.id), role (student | tutor | admin | super_admin), full_name, email, status (invited | active | suspended), created_at
 - **students**: profile_id, matric_no (unique, trimmed, uppercase)

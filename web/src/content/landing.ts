@@ -29,7 +29,7 @@ export type TrainingArea = {
 };
 
 /** Inline link targets resolved from src/lib/site.ts at render time. */
-export type LinkTarget = "phone" | "activate";
+export type LinkTarget = "phone";
 
 /** A run of text where some pieces are links. */
 export type RichText = (string | { text: string; link: LinkTarget })[];
@@ -56,8 +56,6 @@ export const hero = {
   ],
   summary: "26 weeks of learning, practical training, creativity and innovation.",
   loginLabel: "Log in to your dashboard",
-  activatePrompt: "First time here?",
-  activateLabel: "Activate your account",
   enquireLabel: "Enquire",
   location: "OAUSTECH, Okitipupa, Ondo State, Nigeria",
 } as const;
@@ -357,8 +355,8 @@ export const faq = {
     {
       question: "How do I access the programme?",
       answer: [
-        "Applications for this cohort have closed. Registered participants can log in with their matric number or email. If you have not activated your account yet, use ",
-        { text: "Activate your account", link: "activate" },
+        "Applications for this cohort have closed. Registered participants can log in with their matric number. If you cannot log in, contact the programme team on ",
+        { text: "+234 703 203 8565", link: "phone" },
         ".",
       ],
     },
@@ -378,8 +376,6 @@ export const finalCta = {
   heading: "Already registered?",
   body: "Log in to see your classes, materials and assessments.",
   loginLabel: "Log in",
-  activatePrompt: "First time here?",
-  activateLabel: "Activate your account",
   facts: [
     { term: "Programme", description: "Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme" },
     { term: "Duration", description: "26 Weeks" },

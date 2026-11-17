@@ -14,15 +14,6 @@ export function FinalCta() {
           <p className="mt-6 max-w-measure font-serif text-[1.375rem] leading-snug md:text-[1.625rem]">{finalCta.body}</p>
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
             <LoginLink>{finalCta.loginLabel}</LoginLink>
-            <p className="text-[0.9375rem] text-ink-muted">
-              {finalCta.activatePrompt}{" "}
-              <a
-                href={site.platform.activate}
-                className="text-accent-soft underline decoration-1 underline-offset-[0.22em] decoration-accent-soft/50 hover:decoration-accent-soft"
-              >
-                {finalCta.activateLabel}
-              </a>
-            </p>
           </div>
         </div>
 

@@ -4,10 +4,9 @@ import { TextLink } from "./TextLink";
 
 const targets: Record<LinkTarget, { href: string; external: boolean }> = {
   phone: { href: site.phone.href, external: false },
-  activate: { href: site.platform.activate, external: false },
 };
 
-/** Renders copy that contains inline links to the phone number or the account activation page. */
+/** Renders copy that contains inline links to the phone number. */
 export function RichText({ value }: { value: RichTextData }) {
   return (
     <>

@@ -12,6 +12,8 @@ Decided 2026-11-10. No paid services. Cloudflare Workers, R2, Upstash, Cron Trig
 - RLS on every table; users read their own rows, admins read everything. All writes go through the API with the service role.
 
 ## Email: SMTP from our own domain
+
+> **Not in use since 2026-11-17.** The platform sends no email (see the note at the top of `docs/auth.md`). The outbox no longer runs; `lib/email.ts`, `lib/outbox.ts` and `pnpm email:test` are kept in case email is turned back on. The rest of this section describes that setup.
 - `EMAIL_PROVIDER=smtp` works with any SMTP host: `SMTP_HOST`, `SMTP_PORT` (465 TLS, 587 STARTTLS), `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`. `resend` (with `RESEND_API_KEY`) and `console` also work. Empty: resend if a key is set, else console.
 - `EMAIL_FROM="Crystal Entrepreneurship <noreply@domain>"` on every email; `EMAIL_REPLY_TO` is a mailbox someone reads.
 - One module (`api/src/lib/email.ts`) with our own templates. Every email has a plain-text and an HTML part, no attachments, and at most one link (the action button).

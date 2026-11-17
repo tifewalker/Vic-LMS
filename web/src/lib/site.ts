@@ -41,7 +41,6 @@ export const site = {
   /** Applications for this cohort are closed. Registered participants use the platform. */
   platform: {
     login: "/login/",
-    activate: "/activate-account/",
   },
 } as const;
 

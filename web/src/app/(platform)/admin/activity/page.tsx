@@ -28,7 +28,6 @@ const typeLabel: Record<string, string> = {
   grade: "Grades released",
   announcement: "Announcements",
   material: "Materials added",
-  activation: "Account activations",
   import: "Student imports",
 };
 
@@ -57,7 +56,7 @@ export default function ActivityPage() {
 
   return (
     <>
-      <PageHeader kicker="Reports" title="Activity" description="Recent posts, questions, submissions, grades, announcements, materials, activations and imports across every programme." />
+      <PageHeader kicker="Reports" title="Activity" description="Recent posts, questions, submissions, grades, announcements, materials and imports across every programme." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       <div className="mt-6 flex flex-wrap gap-4 border-b border-line pb-6">
         <SelectField label="Type" value={type} onChange={(e) => setType(e.target.value)} className="w-full sm:w-64">
@@ -68,7 +67,7 @@ export default function ActivityPage() {
             </option>
           ))}
         </SelectField>
-        <SelectField label="Programme" value={programme} onChange={(e) => setProgramme(e.target.value)} className="w-full sm:w-64" hint={programme ? "Activations and imports are not tied to a programme, so they are left out." : undefined}>
+        <SelectField label="Programme" value={programme} onChange={(e) => setProgramme(e.target.value)} className="w-full sm:w-64" hint={programme ? "Imports are not tied to a programme, so they are left out." : undefined}>
           <option value="">All programmes</option>
           {data?.programmes.map((p) => (
             <option key={p.id} value={p.id}>

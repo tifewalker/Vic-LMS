@@ -269,7 +269,7 @@ type Activity = {
   link: string | null;
 };
 
-const ACTIVITY_TYPES = ["post", "question", "thread", "reply", "submission", "grade", "announcement", "material", "activation", "import"] as const;
+const ACTIVITY_TYPES = ["post", "question", "thread", "reply", "submission", "grade", "announcement", "material", "import"] as const;
 
 moderationRouter.get("/activity", async (req, res) => {
   const programmeId = z.uuid().safeParse(req.query.programme_id).data ?? null;
@@ -345,13 +345,7 @@ moderationRouter.get("/activity", async (req, res) => {
       for (const m of (await q).data ?? []) items.push({ id: `ma-${m.id}`, type: "material", at: m.created_at, actor_id: m.uploaded_by, programme_id: m.programme_id, class_id: m.class_id, summary: `Added material: ${clip(m.title)}`, link: `programme:${m.programme_id}` });
     })());
   }
-  // Activations and imports are not tied to a programme, so a programme filter leaves them out.
-  if (!programmeId && want("activation")) {
-    jobs.push((async () => {
-      const { data } = await admin.from("invitations").select("id, profile_id, used_at").not("used_at", "is", null).order("used_at", { ascending: false }).limit(N);
-      for (const i of data ?? []) items.push({ id: `ac-${i.id}`, type: "activation", at: i.used_at!, actor_id: i.profile_id, programme_id: null, class_id: null, summary: "Activated their account", link: "users" });
-    })());
-  }
+  // Imports are not tied to a programme, so a programme filter leaves them out.
   if (!programmeId && want("import")) {
     jobs.push((async () => {
       const { data } = await admin.from("import_log").select("id, admin_id, created_count, created_at").order("created_at", { ascending: false }).limit(N);

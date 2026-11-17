@@ -1,12 +1,11 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
-import { createInvitedAccount, existingEmails, existingMatrics } from "../lib/accounts.js";
-import { emailsRemainingToday } from "../lib/email.js";
-import { drainOutbox, emailStatus, queueInvite } from "../lib/outbox.js";
+import { createAccount, existingEmails, existingMatrics } from "../lib/accounts.js";
 import { normaliseEmail } from "../lib/identifier.js";
 import { one } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
+import { passwordProblems } from "../lib/tokens.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
 import { enrolStudents } from "./programmes.js";
@@ -25,14 +24,11 @@ adminRouter.get("/summary", async (_req, res) => {
     const { count } = await q;
     return count ?? 0;
   };
-  const [students, tutors, invited, active, suspended, pendingInvites, remainingToday, programmes, notEnrolled, upcomingClasses, email] = await Promise.all([
+  const [students, tutors, active, suspended, programmes, notEnrolled, upcomingClasses] = await Promise.all([
     count("profiles", ["role", "student"]),
     count("profiles", ["role", "tutor"]),
-    count("profiles", ["status", "invited"]),
     count("profiles", ["status", "active"]),
     count("profiles", ["status", "suspended"]),
-    count("invitations", ["status", "pending"]),
-    emailsRemainingToday(),
     count("programmes", ["is_active", "true"]),
     admin.rpc("count_students_not_enrolled").then((r) => (r.data as number | null) ?? 0),
     admin
@@ -40,21 +36,8 @@ adminRouter.get("/summary", async (_req, res) => {
       .select("*", { count: "exact", head: true })
       .gte("ends_at", new Date().toISOString())
       .then((r) => r.count ?? 0),
-    emailStatus(),
   ]);
-  res.json({
-    students,
-    tutors,
-    invited,
-    active,
-    suspended,
-    pendingInvites,
-    emailsRemainingToday: remainingToday,
-    programmes,
-    studentsNotEnrolled: notEnrolled,
-    upcomingClasses,
-    email,
-  });
+  res.json({ students, tutors, active, suspended, programmes, studentsNotEnrolled: notEnrolled, upcomingClasses });
 });
 
 /* POST /admin/students/import */
@@ -89,7 +72,8 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
       skipped.push({ row: r.row, reason: "This matric number is already registered." });
       continue;
     }
-    const result = await createInvitedAccount({ role: "student", ...r });
+    // A student's first password is their matric number, as stored (trimmed, uppercase).
+    const result = await createAccount({ role: "student", ...r, password: r.matric_no });
     if (result.ok) {
       created++;
       createdIds.push(result.profileId);
@@ -106,53 +90,38 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     const { error: logError } = await admin.from("import_log").insert({ admin_id: req.profile!.id, created_count: created });
     if (logError) console.error("import_log insert failed", logError.message);
   }
-  const invites = await drainOutbox();
-  res.json({ created, skipped, errors, invites, enrolled });
+  res.json({ created, skipped, errors, enrolled });
 });
 
-/* POST /admin/invitations/send-pending */
-adminRouter.post("/invitations/send-pending", async (_req, res) => {
-  res.json(await drainOutbox());
+/* POST /admin/tutors and POST /admin/admins: the admin sets the password; no email is sent */
+const passwordField = z.string().superRefine((v, ctx) => {
+  for (const message of passwordProblems(v)) ctx.addIssue({ code: "custom", message });
 });
-
-/* POST /admin/invitations/:id/resend: new token, the old link stops working */
-adminRouter.post("/invitations/:id/resend", async (req, res) => {
-  const id = z.uuid().safeParse(req.params.id);
-  if (!id.success) return res.status(404).json({ error: "Invitation not found." });
-  const result = await queueInvite(id.data);
-  if (!result) return res.status(400).json({ error: "This invitation cannot be sent. It may already be activated." });
-  res.json({
-    status: result,
-    message: result === "sent" ? "Invite sent." : "The invite is queued. It goes out automatically once the email limits allow.",
-  });
-});
-
-/* POST /admin/tutors and POST /admin/admins */
 const personBody = z.object({
   full_name: z.string().trim().min(1, "Full name is missing.").max(120),
   email: z.email("Email is not valid.").transform(normaliseEmail),
+  password: passwordField,
 });
 
-async function createAndInvite(role: "tutor" | "admin", input: z.infer<typeof personBody>) {
+async function createWithPassword(role: "tutor" | "admin", input: z.infer<typeof personBody>) {
   const taken = await existingEmails([input.email]);
   if (taken.size) return { status: 409, body: { error: "An account with this email already exists." } };
-  const result = await createInvitedAccount({ role, ...input });
+  const result = await createAccount({ role, ...input });
   if (!result.ok) return { status: 400, body: { error: result.reason } };
-  const invite = (await queueInvite(result.invitationId)) ?? "failed";
-  return { status: 201, body: { id: result.profileId, tutor_id: result.tutor_id ?? null, invite } };
+  return { status: 201, body: { id: result.profileId, tutor_id: result.tutor_id ?? null } };
 }
 
 adminRouter.post("/tutors", async (req, res) => {
   const body = personBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: body.error.issues.map((i) => i.message).join(" ") });
-  const out = await createAndInvite("tutor", body.data);
+  const out = await createWithPassword("tutor", body.data);
   res.status(out.status).json(out.body);
 });
 
 adminRouter.post("/admins", requireRole("super_admin"), async (req, res) => {
   const body = personBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: body.error.issues.map((i) => i.message).join(" ") });
-  const out = await createAndInvite("admin", body.data);
+  const out = await createWithPassword("admin", body.data);
   res.status(out.status).json(out.body);
 });
 
@@ -173,7 +142,7 @@ adminRouter.get("/users", async (req, res) => {
   let list = admin
     .from("profiles")
     .select(
-      "id, role, full_name, email, status, created_at, students(matric_no), tutors(tutor_id), invitations(id, status, attempts, last_sent_at, expires_at)",
+      "id, role, full_name, email, status, created_at, students(matric_no), tutors(tutor_id)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -200,25 +169,43 @@ adminRouter.get("/users", async (req, res) => {
   const { data, count, error } = await list;
   if (error) return res.status(500).json({ error: "Could not load users." });
 
-  const now = Date.now();
-  const users = (data ?? []).map((u) => {
-    const inv = one(u.invitations as unknown as { id: string; status: string; attempts: number; last_sent_at: string | null; expires_at: string | null }[]);
-    const invStatus =
-      inv && inv.status === "sent" && inv.expires_at && new Date(inv.expires_at).getTime() <= now ? "expired" : inv?.status;
-    return {
-      id: u.id,
-      role: u.role,
-      full_name: u.full_name,
-      email: u.email,
-      status: u.status,
-      created_at: u.created_at,
-      matric_no: (one(u.students as unknown as { matric_no: string }[]) ?? null)?.matric_no ?? null,
-      tutor_id: (one(u.tutors as unknown as { tutor_id: string }[]) ?? null)?.tutor_id ?? null,
-      invitation: inv ? { id: inv.id, status: invStatus, attempts: inv.attempts, last_sent_at: inv.last_sent_at } : null,
-    };
-  });
+  const users = (data ?? []).map((u) => ({
+    id: u.id,
+    role: u.role,
+    full_name: u.full_name,
+    email: u.email,
+    status: u.status,
+    created_at: u.created_at,
+    matric_no: (one(u.students as unknown as { matric_no: string }[]) ?? null)?.matric_no ?? null,
+    tutor_id: (one(u.tutors as unknown as { tutor_id: string }[]) ?? null)?.tutor_id ?? null,
+  }));
 
-  res.json({ users, total: count ?? 0, page, pageSize: PAGE_SIZE, emailsRemainingToday: await emailsRemainingToday() });
+  res.json({ users, total: count ?? 0, page, pageSize: PAGE_SIZE });
+});
+
+/* POST /admin/users/:id/password
+ * Admins set passwords (there are no reset emails). A student with no password given is reset
+ * to their matric number. Only a super_admin can change an admin's password. */
+const passwordBody = z.object({ password: passwordField.optional() });
+
+adminRouter.post("/users/:id/password", async (req, res) => {
+  const id = z.uuid().safeParse(req.params.id);
+  if (!id.success) return res.status(404).json({ error: "User not found." });
+  const body = passwordBody.safeParse(req.body ?? {});
+  if (!body.success) return res.status(400).json({ error: body.error.issues.map((i) => i.message).join(" ") });
+
+  const { data: target } = await admin.from("profiles").select("id, role, students(matric_no)").eq("id", id.data).maybeSingle();
+  if (!target) return res.status(404).json({ error: "User not found." });
+  if ((target.role === "admin" || target.role === "super_admin") && req.profile!.role !== "super_admin" && target.id !== req.profile!.id) {
+    return res.status(403).json({ error: "Only a super admin can change an admin's password." });
+  }
+  const matric = (one(target.students as unknown as { matric_no: string }[]) ?? null)?.matric_no ?? null;
+  const password = body.data.password ?? (target.role === "student" ? matric : null);
+  if (!password) return res.status(400).json({ error: "Enter a new password." });
+
+  const { error } = await admin.auth.admin.updateUserById(id.data, { password });
+  if (error) return res.status(400).json({ error: `Could not set the password: ${error.message}` });
+  res.json({ id: id.data, reset_to_matric: !body.data.password });
 });
 
 /* POST /admin/users/:id/suspend and /reactivate
@@ -229,19 +216,13 @@ async function changeSuspension(req: import("express").Request, res: import("exp
   if (!id.success) return res.status(404).json({ error: "User not found." });
   if (id.data === req.profile!.id) return res.status(400).json({ error: "You cannot change your own account here." });
 
-  const { data: target } = await admin
-    .from("profiles")
-    .select("id, role, status, invitations(status)")
-    .eq("id", id.data)
-    .maybeSingle();
+  const { data: target } = await admin.from("profiles").select("id, role, status").eq("id", id.data).maybeSingle();
   if (!target) return res.status(404).json({ error: "User not found." });
   if ((target.role === "admin" || target.role === "super_admin") && req.profile!.role !== "super_admin") {
     return res.status(403).json({ error: "Only a super admin can suspend or reactivate admins." });
   }
 
-  // Back to active if they had activated their account, otherwise back to invited.
-  const activated = one(target.invitations as { status: string }[] | null)?.status === "activated" || target.role === "super_admin";
-  const nextStatus = suspend ? "suspended" : activated ? "active" : "invited";
+  const nextStatus = suspend ? "suspended" : "active";
 
   const { error: banErr } = await admin.auth.admin.updateUserById(id.data, { ban_duration: suspend ? "876000h" : "none" });
   if (banErr) return res.status(500).json({ error: "Could not update the account. Please try again." });

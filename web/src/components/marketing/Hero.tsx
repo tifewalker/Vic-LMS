@@ -28,12 +28,6 @@ export function Hero() {
             <p className="max-w-[34ch] font-serif text-[1.3125rem] leading-snug md:text-2xl">{hero.strapline}</p>
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
               <LoginLink>{hero.loginLabel}</LoginLink>
-              <p className="text-[0.9375rem]">
-                {hero.activatePrompt}{" "}
-                <a href={site.platform.activate} className={textLinkClass}>
-                  {hero.activateLabel}
-                </a>
-              </p>
             </div>
             <p className="mt-4 text-[0.9375rem]">
               <a href={site.phone.href} className={textLinkClass}>

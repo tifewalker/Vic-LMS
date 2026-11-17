@@ -5,7 +5,7 @@ import { partnershipLine } from "@/lib/site";
 
 export const metadata: Metadata = { robots: { index: false } };
 
-/** Calm, centred frame for sign-in, activation and password pages. Same header as the app on phones. */
+/** Calm, centred frame for the sign-in page. Same header as the app on phones. */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col text-ui-sm">
