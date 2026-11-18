@@ -1,6 +1,7 @@
+import Image from "next/image";
 import { PhotoFigure } from "@/components/ui/PhotoFigure";
 import { TextLink } from "@/components/ui/TextLink";
-import { imageSlots } from "@/content/images";
+import { images, imageSlots } from "@/content/images";
 import { behind } from "@/content/landing";
 import { site } from "@/lib/site";
 import { Section, SectionHeader } from "./Section";
@@ -19,6 +20,14 @@ export function Behind() {
           <h3 id="crystal-title" className="border-t border-line pt-5 text-[1.75rem] md:text-[2rem]">
             {crystal.heading}
           </h3>
+          <Image
+            src={images.crystalLogo.src}
+            alt={images.crystalLogo.alt}
+            width={images.crystalLogo.width}
+            height={images.crystalLogo.height}
+            sizes="320px"
+            className="mt-6 h-auto w-full max-w-[320px]"
+          />
           <p className="mt-6 max-w-measure font-serif text-[1.3125rem] leading-snug md:text-[1.5rem]">{crystal.body}</p>
         </article>
 

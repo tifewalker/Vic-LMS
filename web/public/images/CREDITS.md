@@ -23,3 +23,7 @@ The training area photos below are from Pexels and are used under the Pexels lic
 | computer-lab.webp | Programme in pictures | Kenneth Chiamaka Ejiofor (https://www.pexels.com/@kenneth-chiamaka-ejiofor-2149965804/) | https://www.pexels.com/photo/diverse-group-learning-programming-in-computer-lab-30879378/ |
 
 All files were resized to 1600px wide and saved as WebP under 250 KB.
+
+## Crystal Entrepreneurship Centre logo
+
+- `crystal-logo.webp` and `crystal-logo-mark.webp`: supplied by Crystal Entrepreneurship Centre (November 2026). White background made transparent; the mark version drops the RC number. Original: `web/assets/photo-originals/crystal-logo.jpg`.

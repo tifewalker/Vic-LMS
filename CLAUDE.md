@@ -96,9 +96,9 @@ Removed for good (applications are closed): eligibility, the separate "Who shoul
 
 ### Branding: both brands, side by side
 - OAUSTECH is the host institution. Crystal Entrepreneurship Centre runs the programme.
-- **Header:** OAUSTECH logo and the Crystal Entrepreneurship Centre name side by side, separated by a thin vertical rule (1px `--line`).
+- **Header:** OAUSTECH logo and the Crystal Entrepreneurship Centre logo side by side, separated by a thin vertical rule (1px `--line`).
 - **Footer:** include the line "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH".
-- There is no Crystal Entrepreneurship Centre logo yet. Set the name in the heading serif as a wordmark and keep a `TODO(content):` for the real logo until the client supplies one.
+- The Crystal Entrepreneurship Centre logo (client supplied, November 2026) is `crystalLogo` in `web/src/content/images.ts`, with a transparent background; `crystalLogoMark` is the same logo without the RC number for small sizes (header, footer, platform sidebar). The original is `web/assets/photo-originals/crystal-logo.jpg`.
 
 ### Images: real photos, self-hosted
 - Use real images from the OAUSTECH website, downloaded into `web/public/images/` and served with `next/image`. Never hotlink.

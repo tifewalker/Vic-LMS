@@ -43,6 +43,22 @@ export const images = {
     height: 65,
     source: "https://oaustech.edu.ng/images/logo.png",
   },
+  /** Client-supplied logo, white background made transparent. Original: web/assets/photo-originals/crystal-logo.jpg */
+  crystalLogo: {
+    src: "/images/crystal-logo.webp",
+    alt: "Crystal Entrepreneurship Centre logo",
+    width: 1200,
+    height: 281,
+    source: "Supplied by Crystal Entrepreneurship Centre",
+  },
+  /** The same logo without the RC number (too small to read at header size), for the header, footer and sidebar. */
+  crystalLogoMark: {
+    src: "/images/crystal-logo-mark.webp",
+    alt: "Crystal Entrepreneurship Centre",
+    width: 635,
+    height: 136,
+    source: "Supplied by Crystal Entrepreneurship Centre",
+  },
   campusGate: {
     src: "/images/oaustech-campus.jpg",
     alt: "The main gate of Olusegun Agagu University of Science and Technology, Okitipupa, with the university name on the arch and green grounds beyond",

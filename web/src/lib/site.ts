@@ -17,8 +17,8 @@ export const site = {
   operator: {
     name: "Crystal Entrepreneurship Centre",
     shortName: "CEC",
-    /** TODO(content): Crystal Entrepreneurship Centre logo not supplied yet. Wordmark is used until then. */
-    logo: null as string | null,
+    /** The logo files are registered in web/src/content/images.ts (crystalLogo, crystalLogoMark). */
+    logo: "/images/crystal-logo.webp",
   },
 
   institution: {
