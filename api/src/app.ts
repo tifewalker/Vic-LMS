@@ -12,7 +12,7 @@ import { teachRouter } from "./routes/teach.js";
 
 export const app = express();
 
-app.set("trust proxy", 1); // Render sits behind one proxy; needed for per-IP rate limits.
+app.set("trust proxy", 1); // One proxy (Caddy on the server) sits in front; needed for per-IP rate limits.
 app.disable("x-powered-by");
 app.use(cors({ origin: webOrigins }));
 app.use(express.json({ limit: "1mb" }));

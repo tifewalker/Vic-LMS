@@ -1,0 +1,6 @@
+# Caddy gets and renews the HTTPS certificate automatically.
+# Install: sudo cp deploy/aws/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+api.crystalinnovationhub.com.ng {
+	encode gzip
+	reverse_proxy localhost:4000
+}

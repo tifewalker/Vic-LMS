@@ -68,7 +68,7 @@ if (!parsed.success) {
   });
   console.error("Cannot start the API: invalid environment variables.");
   for (const line of lines) console.error(line);
-  console.error("Set them in api/.env locally, or in the Render dashboard (Environment) in production. See api/.env.example.");
+  console.error("Set them in api/.env locally, or in /etc/vec-api.env on the server in production (see deploy/aws/README.md). See api/.env.example.");
   process.exit(1);
 }
 

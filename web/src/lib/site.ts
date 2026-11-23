@@ -4,8 +4,8 @@
  */
 
 export const site = {
-  /** TODO(content): replace with the production domain once it is known. */
-  url: "http://localhost:3000",
+  /** Production domain, used for metadata and link previews. The API is at api.crystalinnovationhub.com.ng. */
+  url: "https://crystalinnovationhub.com.ng",
 
   name: "OAUSTECH Entrepreneurship, ICT, Digital Skills & Emerging Technologies Training Programme",
   shortName: "OAUSTECH Training Programme",

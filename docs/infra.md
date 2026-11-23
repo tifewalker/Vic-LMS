@@ -4,7 +4,7 @@ Decided 2026-11-10. No paid services. Cloudflare Workers, R2, Upstash, Cron Trig
 
 ## Layout: pnpm monorepo
 - `web/`: the Next.js site. `output: "export"`, served free as a **Render Static Site**. Every app page is client-side and talks to the API. Holds only public config (API URL, Supabase URL and anon key). Never the service role key.
-- `api/`: Node + TypeScript + Express, a free **Render Web Service**. Holds the Supabase service role key and does all privileged work.
+- `api/`: Node + TypeScript + Express. Holds the Supabase service role key and does all privileged work. **Production (from November 2026): one AWS Lightsail Ubuntu server at `https://api.crystalinnovationhub.com.ng`**, run by systemd behind Caddy (HTTPS). Setup and updates: `deploy/aws/README.md`. It was a free Render Web Service before.
 
 ## Database and auth: Supabase (free)
 - SQL migrations in `api/supabase/migrations`. Never edit the remote schema by hand.
@@ -39,5 +39,5 @@ Decided 2026-11-10. No paid services. Cloudflare Workers, R2, Upstash, Cron Trig
 - One `.env.example` per app, checked with zod at start-up (API) or first use (web).
 
 ## Free tier notes
-- A free Render Web Service sleeps after 15 minutes idle; the first request after that takes about a minute.
+- The AWS server does not sleep. Run one copy of the API only: rate limits live in memory.
 - In-memory rate limits reset when the API restarts or sleeps.

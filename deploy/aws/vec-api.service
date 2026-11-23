@@ -1,0 +1,20 @@
+# systemd unit for the API. Install: sudo cp deploy/aws/vec-api.service /etc/systemd/system/
+# Secrets live in /etc/vec-api.env (chmod 600), never in the repo.
+[Unit]
+Description=Crystal training platform API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/vec/api
+ExecStart=/usr/bin/node --env-file=/etc/vec-api.env dist/index.js
+Restart=always
+RestartSec=3
+# Basic hardening: the API only needs to read its code and talk to the network.
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
