@@ -6,13 +6,15 @@ type Props = {
   children: React.ReactNode;
   size?: "sm" | "md";
   className?: string;
+  /** Defaults to the login page. RegisterLink passes the registration page. */
+  href?: string;
 };
 
 /** The main call to action on the public site: sign in to the training platform. Solid clay, no icons. */
-export function LoginLink({ children, size = "md", className }: Props) {
+export function LoginLink({ children, size = "md", className, href = site.platform.login }: Props) {
   return (
     <Link
-      href={site.platform.login}
+      href={href}
       className={cx(
         "inline-flex items-center justify-center rounded-sm bg-accent font-semibold text-paper",
         "transition-colors duration-150 hover:bg-accent-strong",
@@ -23,4 +25,9 @@ export function LoginLink({ children, size = "md", className }: Props) {
       {children}
     </Link>
   );
+}
+
+/** The same solid button, pointing to student registration. */
+export function RegisterLink(props: Omit<Props, "href">) {
+  return <LoginLink {...props} href={site.platform.register} />;
 }

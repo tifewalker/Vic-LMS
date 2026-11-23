@@ -1,4 +1,4 @@
-import { LoginLink } from "@/components/ui/LoginLink";
+import { RegisterLink } from "@/components/ui/LoginLink";
 import { PhotoFigure } from "@/components/ui/PhotoFigure";
 import { textLinkClass } from "@/components/ui/TextLink";
 import { imageSlots } from "@/content/images";
@@ -27,7 +27,13 @@ export function Hero() {
           <div className="lg:col-span-4 lg:pb-2">
             <p className="max-w-[34ch] font-serif text-[1.3125rem] leading-snug md:text-2xl">{hero.strapline}</p>
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <LoginLink>{hero.loginLabel}</LoginLink>
+              <RegisterLink>{hero.registerLabel}</RegisterLink>
+              <p className="text-[0.9375rem]">
+                {hero.loginPrompt}{" "}
+                <a href={site.platform.login} className={textLinkClass}>
+                  {hero.loginLabel}
+                </a>
+              </p>
             </div>
             <p className="mt-4 text-[0.9375rem]">
               <a href={site.phone.href} className={textLinkClass}>

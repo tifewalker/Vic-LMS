@@ -1,5 +1,7 @@
-import { LoginLink } from "@/components/ui/LoginLink";
-import { finalCta } from "@/content/landing";
+import { RegisterLink } from "@/components/ui/LoginLink";
+import { textLinkClass } from "@/components/ui/TextLink";
+import { finalCta, hero } from "@/content/landing";
+import { site } from "@/lib/site";
 import { navItems } from "@/content/navigation";
 import { Brand } from "./Brand";
 import { MobileMenu } from "./MobileMenu";
@@ -24,8 +26,11 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <div className="hidden xl:block">
-          <LoginLink size="sm">{finalCta.loginLabel}</LoginLink>
+        <div className="hidden items-center gap-5 xl:flex">
+          <a href={site.platform.login} className={textLinkClass}>
+            {finalCta.loginLabel}
+          </a>
+          <RegisterLink size="sm">{hero.registerLabel}</RegisterLink>
         </div>
 
         <MobileMenu items={navItems} />

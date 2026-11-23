@@ -55,7 +55,9 @@ export const hero = {
     "From learning how to build a business and use digital tools to exploring artificial intelligence, drone technology, data processing and other emerging innovations, this programme offers an opportunity to discover your potential, develop practical abilities and prepare for the opportunities of tomorrow.",
   ],
   summary: "26 weeks of learning, practical training, creativity and innovation.",
-  loginLabel: "Log in to your dashboard",
+  registerLabel: "Register as a student",
+  loginPrompt: "Already registered?",
+  loginLabel: "Log in",
   enquireLabel: "Enquire",
   location: "OAUSTECH, Okitipupa, Ondo State, Nigeria",
 } as const;
@@ -355,7 +357,7 @@ export const faq = {
     {
       question: "How do I access the programme?",
       answer: [
-        "Applications for this cohort have closed. Registered participants can log in with their matric number. If you cannot log in, contact the programme team on ",
+        "Applications for this cohort have closed. Students on the programme register on this site with their name, email and matric number, then log in with their email and use their matric number as the password. If you cannot register or log in, contact the programme team on ",
         { text: "+234 703 203 8565", link: "phone" },
         ".",
       ],
@@ -376,6 +378,8 @@ export const finalCta = {
   heading: "Already registered?",
   body: "Log in to see your classes, materials and assessments.",
   loginLabel: "Log in",
+  registerPrompt: "New student?",
+  registerLabel: "Register here",
   facts: [
     { term: "Programme", description: "Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme" },
     { term: "Duration", description: "26 Weeks" },

@@ -46,7 +46,7 @@ web/src/lib/site.ts                   phone, form link, address, urls
 - No emoji in the UI.
 - Keep the British spelling used in the copy (programme, organise, visualisation).
 - Items the copy marks "to be confirmed" (dates, fees, certificates) must not be shown as facts. Hide them or show "Details to be announced".
-- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's call to action is Log in (`/login/`), kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students register themselves at `/register/` (name, email, matric number, programmes; active at once) or are imported by an admin, then log in with their email or matric number, and the matric number is also their first password; admins set tutor and admin passwords and reset any password from the Users page.
+- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's calls to action are Register as a student (`/register/`, for students already on the programme, primary in the hero and header) and Log in (`/login/`), both kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students register themselves at `/register/` (name, email, matric number, programmes; active at once) or are imported by an admin, then log in with their email or matric number, and the matric number is also their first password; admins set tutor and admin passwords and reset any password from the Users page.
 
 ## Design direction: sweet and neutral, not "AI template"
 
@@ -80,7 +80,7 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 - **Motion:** subtle fade or rise on scroll at most, under 300ms, and off under `prefers-reduced-motion`.
 
 ### Landing page sections (in this order)
-1. **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Log in button and Enquire (phone), location line. The OAUSTECH main gate photo.
+1. **Hero:** big serif headline "26 Weeks to Learn. Build. Innovate. Become an Entrepreneur.", short intro, Register as a student button with an "Already registered? Log in" link, and Enquire (phone), location line. The OAUSTECH main gate photo.
 2. **About:** intro paragraphs on the left; on the right one numbered list of six benefits ("Why participate" and "What you can expect to gain" merged) and one line on who it is for. The auditorium photo under the intro.
 3. **Programme structure:** a horizontal 26-week ruler/timeline, weeks 1 to 6 marked "Virtual" and 7 to 26 marked "Physical and practical at OAUSTECH". Stacks vertically on mobile. This is the visual centrepiece.
 4. **Programme in pictures:** asymmetric grid of six photos (stock plus the campus gate).
@@ -88,7 +88,7 @@ The feel: a well-made printed prospectus from a good university. Warm paper, cal
 6. **Who's behind the programme** (`#about-us`): Crystal Entrepreneurship Centre and OAUSTECH (motto set large, library photo) side by side.
 7. **From our past trainings** (`#past-trainings`): standard section header, one line of intro, then a uniform grid of Crystal's own photos, all 4:3 (2 columns on mobile, 3 on tablet, 4 from 1024px, max 1100px wide). At most 8 in the grid, with "View all photos" opening the lightbox if there are more. Never render a photo wider than its source; drop any that look blurry.
 8. **FAQ:** accordion, six questions.
-9. **Final call to action and footer:** Already registered? Log in, contact, university website, location.
+9. **Final call to action and footer:** Already registered? Log in (with "New student? Register here"), contact, university website, location.
 
 Removed for good (applications are closed): eligibility, the separate "Who should participate", "What you can expect to gain", and standalone "Why OAUSTECH" sections, and the certificate question.
 
