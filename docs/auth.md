@@ -3,7 +3,8 @@
 Status: built on `feat/auth` (2026-11-10). Architecture in `docs/infra.md`.
 
 > **Changed 2026-11-17 (client decision): no activation and no email.** Accounts are created active and can sign in straight away.
-> - Students: created by import; their first password is their matric number (stored trimmed and uppercase; the login also accepts it in any case and with stray spaces). Matric numbers need at least 6 characters for this.
+> - Self-registration (added 2026-11-23): `/register/` takes full name, email, matric number and one or more programmes. `GET /auth/programmes` lists active programmes; `POST /auth/register` validates with the import rules (plus matric characters `A-Z 0-9 / - .`), creates the student active with the matric number as password and enrols them. No approval step and no email; the page shows the login details on success. Rate limited to 40 per 15 minutes per address (campus networks share one). Students can log in with their email or matric number; for student accounts the login tries the password in matric form (uppercase, no spaces) once.
+> - Students: created by import or self-registration; their first password is their matric number (stored trimmed and uppercase; the login also accepts it in any case and with stray spaces). Matric numbers need at least 6 characters for this.
 > - Tutors and admins: the admin sets the password on the Add tutor / Add admin form.
 > - Resets: `POST /admin/users/:id/password` from the Users page. A student with no password given goes back to their matric number; tutors and admins get the password the admin types. Only a super_admin changes an admin's password.
 > - Removed: `/auth/activate`, `/auth/forgot-password`, `/auth/request-activation`, `/admin/invitations/*`, the `/activate`, `/activate-account`, `/forgot-password` and `/reset-password` pages, and the email outbox timer. The `invitations`, `email_log` and `email_queue` tables stay in the schema but are no longer written.

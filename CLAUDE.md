@@ -46,7 +46,7 @@ web/src/lib/site.ts                   phone, form link, address, urls
 - No emoji in the UI.
 - Keep the British spelling used in the copy (programme, organise, visualisation).
 - Items the copy marks "to be confirmed" (dates, fees, certificates) must not be shown as facts. Hide them or show "Details to be announced".
-- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's call to action is Log in (`/login/`), kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students log in with their matric number, which is also their first password; admins set tutor and admin passwords and reset any password from the Users page.
+- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's call to action is Log in (`/login/`), kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students register themselves at `/register/` (name, email, matric number, programmes; active at once) or are imported by an admin, then log in with their email or matric number, and the matric number is also their first password; admins set tutor and admin passwords and reset any password from the Users page.
 
 ## Design direction: sweet and neutral, not "AI template"
 

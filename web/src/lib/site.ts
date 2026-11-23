@@ -41,6 +41,8 @@ export const site = {
   /** Applications for this cohort are closed. Registered participants use the platform. */
   platform: {
     login: "/login/",
+    /** Students register themselves here (name, email, matric number, programmes). No email is sent. */
+    register: "/register/",
   },
 } as const;
 
