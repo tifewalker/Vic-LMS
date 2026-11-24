@@ -3,14 +3,19 @@
  * Mirrors api/src/lib/rows.ts; the API validates again and has the final say.
  */
 
-export type Row = { matric_no: string; full_name: string; email: string };
+export type Row = { matric_no: string; full_name: string; email: string; department: string; level: string };
 export type PreviewRow = Row & { line: number; problems: string[] };
 
 const HEADERS: Record<keyof Row, string[]> = {
   matric_no: ["matric_no", "matric no", "matric number", "matric", "matriculation number"],
   full_name: ["full_name", "full name", "name"],
   email: ["email", "email address", "e-mail"],
+  department: ["department", "dept"],
+  level: ["level", "lvl"],
 };
+/** Columns a file may leave out. */
+const OPTIONAL: (keyof Row)[] = ["department", "level"];
+const LEVEL = /^(100|200|300|400|500)\s*(l|lvl|level)?$/i;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,7 +26,7 @@ function columnIndex(header: string[]): Record<keyof Row, number> | null {
   const out = {} as Record<keyof Row, number>;
   for (const key of Object.keys(HEADERS) as (keyof Row)[]) {
     const i = norm.findIndex((h) => HEADERS[key].includes(h));
-    if (i === -1) return null;
+    if (i === -1 && !OPTIONAL.includes(key)) return null;
     out[key] = i;
   }
   return out;
@@ -44,6 +49,8 @@ export function checkSheet(sheet: unknown[][]): PreviewRow[] {
     const matric_no = String(r[cols.matric_no] ?? "").trim().toUpperCase().replace(/\s+/g, "");
     const full_name = String(r[cols.full_name] ?? "").trim().replace(/\s+/g, " ");
     const email = String(r[cols.email] ?? "").trim().toLowerCase();
+    const department = cols.department === -1 ? "" : String(r[cols.department] ?? "").trim().replace(/\s+/g, " ");
+    const level = cols.level === -1 ? "" : String(r[cols.level] ?? "").trim();
     const problems: string[] = [];
 
     if (!matric_no) problems.push("Matric number is missing.");
@@ -52,12 +59,14 @@ export function checkSheet(sheet: unknown[][]): PreviewRow[] {
     if (!full_name) problems.push("Full name is missing.");
     if (!email) problems.push("Email is missing.");
     else if (!EMAIL.test(email)) problems.push("Email is not valid.");
+    if (department.length > 120) problems.push("Department is too long.");
+    if (level && !LEVEL.test(level)) problems.push("Level must be 100, 200, 300, 400 or 500.");
     if (matric_no && seenMatric.has(matric_no)) problems.push(`Same matric number as line ${seenMatric.get(matric_no)}.`);
     if (email && seenEmail.has(email)) problems.push(`Same email as line ${seenEmail.get(email)}.`);
     if (matric_no && !seenMatric.has(matric_no)) seenMatric.set(matric_no, line);
     if (email && !seenEmail.has(email)) seenEmail.set(email, line);
 
-    return { line, matric_no, full_name, email, problems };
+    return { line, matric_no, full_name, email, department, level, problems };
   });
 }
 

@@ -17,7 +17,7 @@ type ImportResult = {
   errors: { row: number; messages: string[] }[];
   enrolled: { added: number } | null;
 };
-type ProgrammeOption = { id: string; title: string; is_active: boolean };
+type ProgrammeOption = { id: string; title: string; is_active: boolean; is_compulsory: boolean };
 
 export default function ImportPage() {
   const toast = useToast();
@@ -55,7 +55,7 @@ export default function ImportPage() {
   async function onConfirm() {
     setBusy(true);
     setError("");
-    const send = valid.map(({ matric_no, full_name, email }) => ({ matric_no, full_name, email }));
+    const send = valid.map(({ matric_no, full_name, email, department, level }) => ({ matric_no, full_name, email, department, level }));
     const res = await api<ImportResult>("/admin/students/import", { body: { rows: send, ...(programmeId ? { programme_id: programmeId } : {}) } });
     setBusy(false);
     if (!res.ok) return setError(res.error);
@@ -64,6 +64,8 @@ export default function ImportPage() {
     toast(`Created ${res.data.created} student${res.data.created === 1 ? "" : "s"}.`);
     setRows(null);
   }
+
+  const compulsoryNames = programmes.filter((p) => p.is_compulsory).map((p) => p.title).join(" and ");
 
   const notImported = result
     ? [
@@ -77,7 +79,7 @@ export default function ImportPage() {
       <PageHeader
         kicker="People"
         title="Import students"
-        description="Upload a .csv or .xlsx file with matric_no, full_name and email. You see a preview before anything is saved. Students log in with their matric number, which is also their first password. No emails are sent."
+        description="Upload a .csv or .xlsx file with matric_no, full_name and email, and optionally department and level. Everyone is enrolled in the compulsory programmes automatically. You see a preview before anything is saved. Students log in with their matric number, which is also their first password. No emails are sent."
         actions={
           <ButtonLink href="/templates/students-template.csv" download variant="secondary">
             Download CSV template
@@ -87,9 +89,15 @@ export default function ImportPage() {
 
       <div className="mt-8 grid max-w-2xl gap-6">
         <FileField label="Student list" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={onFile} />
-        <SelectField label="Enrol in a programme" optional value={programmeId} onChange={(e) => setProgrammeId(e.target.value)}>
+        <SelectField
+          label="Also enrol in"
+          optional
+          hint={compulsoryNames ? `Everyone is added to ${compulsoryNames} automatically.` : undefined}
+          value={programmeId}
+          onChange={(e) => setProgrammeId(e.target.value)}
+        >
           <option value="">Not yet</option>
-          {programmes.map((p) => (
+          {programmes.filter((p) => !p.is_compulsory).map((p) => (
             <option key={p.id} value={p.id}>
               {p.title}
             </option>
@@ -131,6 +139,11 @@ export default function ImportPage() {
                   ),
                 },
                 { key: "matric", header: "Matric no.", cell: (r) => <span className="tabular-nums">{r.matric_no}</span> },
+                {
+                  key: "dept",
+                  header: "Department and level",
+                  cell: (r) => (r.department || r.level ? [r.department, r.level && `${r.level.replace(/\D/g, "")} Level`].filter(Boolean).join(", ") : <span className="text-ink-muted">Not given</span>),
+                },
                 { key: "line", header: "Line", numeric: true, cell: (r) => r.line },
                 {
                   key: "check",

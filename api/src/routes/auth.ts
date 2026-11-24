@@ -8,7 +8,7 @@ import { one } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
 import { requireAuth } from "../middleware/auth.js";
 import { admin, anonClient } from "../supabase.js";
-import { enrolStudents } from "./programmes.js";
+import { compulsoryProgrammeIds, enrolStudents } from "./programmes.js";
 
 export const authRouter = Router();
 
@@ -80,9 +80,10 @@ authRouter.post("/login", byIp(30), loginByIdentifier, async (req, res) => {
 
 /* ---------- Student self-registration (no email is sent) ---------- */
 
-/* GET /auth/programmes: the programmes a student can pick when registering. Public. */
+/* GET /auth/programmes: active programmes for the registration form. Compulsory ones are
+   given to everyone; the student picks one of the others. Public. */
 authRouter.get("/programmes", byIp(60), async (_req, res) => {
-  const { data, error } = await admin.from("programmes").select("id, title").eq("is_active", true).order("title");
+  const { data, error } = await admin.from("programmes").select("id, title, is_compulsory").eq("is_active", true).order("title");
   if (error) return res.status(500).json({ error: "Could not load the programmes." });
   res.json({ programmes: data });
 });
@@ -92,17 +93,23 @@ const registerBody = z.object({
   full_name: z.string().max(200),
   email: z.string().max(254),
   matric_no: z.string().max(60),
-  programme_ids: z.array(z.uuid()).max(20),
+  department: z.string().max(200),
+  level: z.union([z.number(), z.string()]),
+  /** The one non-compulsory programme the student picks. */
+  programme_id: z.uuid(),
 });
 
 /**
  * POST /auth/register: a student creates their own account. It is active at once; the
- * password is the matric number. Students on one campus network share an address, so the
- * per-address limit is generous.
+ * password is the matric number. They are enrolled in every compulsory programme plus the one
+ * they picked. Students on one campus network share an address, so the per-address limit is generous.
  */
 authRouter.post("/register", byIp(40), async (req, res) => {
   const body = registerBody.safeParse(req.body);
-  if (!body.success) return res.status(400).json({ error: "Fill in every field and try again." });
+  if (!body.success) {
+    const missingProgramme = body.error.issues.some((i) => i.path[0] === "programme_id");
+    return res.status(400).json({ error: missingProgramme ? "Choose your programme." : "Fill in every field and try again." });
+  }
 
   const { valid, errors } = validateRows([body.data]);
   if (errors.length) return res.status(400).json({ error: errors[0].messages.join(" ") });
@@ -110,17 +117,23 @@ authRouter.post("/register", byIp(40), async (req, res) => {
   if (!MATRIC_CHARS.test(row.matric_no)) {
     return res.status(400).json({ error: "Matric number can only contain letters, numbers and the characters / - ." });
   }
+  if (!row.department) return res.status(400).json({ error: "Enter your department." });
+  if (row.level === null) return res.status(400).json({ error: "Choose your level." });
 
-  const ids = [...new Set(body.data.programme_ids)];
-  if (!ids.length) return res.status(400).json({ error: "Choose at least one programme." });
-  const { data: programmes, error: progErr } = await admin.from("programmes").select("id").in("id", ids).eq("is_active", true);
-  if (progErr) return res.status(500).json({ error: "Could not check the programmes. Please try again." });
-  if (programmes.length !== ids.length) return res.status(400).json({ error: "One of the programmes is no longer available. Reload the page and choose again." });
+  const { data: chosen, error: progErr } = await admin
+    .from("programmes")
+    .select("id, is_compulsory")
+    .eq("id", body.data.programme_id)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (progErr) return res.status(500).json({ error: "Could not check the programme. Please try again." });
+  if (!chosen) return res.status(400).json({ error: "That programme is no longer available. Reload the page and choose again." });
+  if (chosen.is_compulsory) return res.status(400).json({ error: "That programme is already included for everyone. Choose one of the others." });
 
   const { data: taken } = await admin.from("students").select("profile_id").eq("matric_no", row.matric_no).maybeSingle();
   if (taken) return res.status(409).json({ error: "This matric number is already registered. Log in instead, or contact the programme team if it is not yours." });
 
-  const created = await createAccount({ role: "student", full_name: row.full_name, email: row.email, password: row.matric_no, matric_no: row.matric_no });
+  const created = await createAccount({ role: "student", ...row, password: row.matric_no });
   if (!created.ok) {
     const dup = /already/i.test(created.reason);
     return res.status(dup ? 409 : 500).json({ error: dup ? `${created.reason} Log in instead.` : "Could not create your account. Please try again." });
@@ -128,7 +141,12 @@ authRouter.post("/register", byIp(40), async (req, res) => {
 
   // The account exists even if an enrolment fails; the admin can enrol them from the admin pages.
   let enrolled = true;
-  for (const pid of ids) if ("error" in (await enrolStudents(pid, [created.profileId]))) enrolled = false;
+  try {
+    const ids = [...(await compulsoryProgrammeIds()), chosen.id];
+    for (const pid of ids) if ("error" in (await enrolStudents(pid, [created.profileId]))) enrolled = false;
+  } catch {
+    enrolled = false;
+  }
 
   res.status(201).json({ full_name: row.full_name, email: row.email, matric_no: row.matric_no, enrolled });
 });

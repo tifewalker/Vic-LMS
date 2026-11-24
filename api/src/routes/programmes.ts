@@ -30,13 +30,15 @@ const programmeFields = z.object({
   description: z.string().trim().max(2000),
   cover_note: z.string().trim().max(2000),
   is_active: z.boolean(),
+  /** Every student is enrolled in compulsory programmes (registration and import). */
+  is_compulsory: z.boolean(),
 });
 const programmeCreate = programmeFields.partial().required({ title: true });
 
 programmesRouter.get("/programmes", async (_req, res) => {
   const { data, error } = await admin
     .from("programmes")
-    .select("id, title, slug, description, cover_note, is_active, created_at, programme_students(count), programme_tutors(count), classes(count)")
+    .select("id, title, slug, description, cover_note, is_active, is_compulsory, created_at, programme_students(count), programme_tutors(count), classes(count)")
     .order("title");
   if (error) return res.status(500).json({ error: "Could not load programmes." });
   res.json({
@@ -161,6 +163,13 @@ programmesRouter.get("/programmes/:id/candidates", async (req, res) => {
 const idList = z.array(z.uuid()).min(1, "Choose at least one person.").max(500);
 
 /** Enrols students in a programme. Used by the enrol endpoint and by the student import. */
+/** Active programmes every student must take. */
+export async function compulsoryProgrammeIds(): Promise<string[]> {
+  const { data, error } = await admin.from("programmes").select("id").eq("is_compulsory", true).eq("is_active", true);
+  if (error) throw error;
+  return data.map((p) => p.id);
+}
+
 export async function enrolStudents(programmeId: string, studentIds: string[]) {
   const { data: real } = await admin.from("students").select("profile_id").in("profile_id", studentIds);
   const ids = (real ?? []).map((r) => r.profile_id);

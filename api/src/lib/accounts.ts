@@ -12,6 +12,8 @@ export async function createAccount(input: {
   email: string;
   password: string;
   matric_no?: string;
+  department?: string | null;
+  level?: number | null;
 }): Promise<{ ok: true; profileId: string; tutor_id?: string } | { ok: false; reason: string }> {
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email: input.email,
@@ -39,7 +41,7 @@ export async function createAccount(input: {
 
   let tutor_id: string | undefined;
   if (input.role === "student") {
-    const { error } = await admin.from("students").insert({ profile_id: id, matric_no: input.matric_no });
+    const { error } = await admin.from("students").insert({ profile_id: id, matric_no: input.matric_no, department: input.department ?? null, level: input.level ?? null });
     if (error) return fail(error.code === "23505" ? "This matric number is already registered." : "Could not save the student record.");
   } else if (input.role === "tutor") {
     const { data, error } = await admin.from("tutors").insert({ profile_id: id }).select("tutor_id").single();

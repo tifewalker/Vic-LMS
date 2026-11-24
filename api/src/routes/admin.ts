@@ -8,7 +8,7 @@ import { validateRows } from "../lib/rows.js";
 import { passwordProblems } from "../lib/tokens.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
-import { enrolStudents } from "./programmes.js";
+import { compulsoryProgrammeIds, enrolStudents } from "./programmes.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole("admin", "super_admin"));
@@ -85,6 +85,8 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     const added = await enrolStudents(programmeId, createdIds);
     enrolled = "error" in added ? { added: 0 } : { added: added.added };
   }
+  // Everyone takes the compulsory programmes.
+  if (createdIds.length) for (const pid of await compulsoryProgrammeIds()) if (pid !== programmeId) await enrolStudents(pid, createdIds);
 
   if (created > 0) {
     const { error: logError } = await admin.from("import_log").insert({ admin_id: req.profile!.id, created_count: created });
@@ -142,7 +144,7 @@ adminRouter.get("/users", async (req, res) => {
   let list = admin
     .from("profiles")
     .select(
-      "id, role, full_name, email, status, created_at, students(matric_no), tutors(tutor_id)",
+      "id, role, full_name, email, status, created_at, students(matric_no, department, level), tutors(tutor_id)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -177,6 +179,8 @@ adminRouter.get("/users", async (req, res) => {
     status: u.status,
     created_at: u.created_at,
     matric_no: (one(u.students as unknown as { matric_no: string }[]) ?? null)?.matric_no ?? null,
+    department: (one(u.students as unknown as { department: string | null }[]) ?? null)?.department ?? null,
+    level: (one(u.students as unknown as { level: number | null }[]) ?? null)?.level ?? null,
     tutor_id: (one(u.tutors as unknown as { tutor_id: string }[]) ?? null)?.tutor_id ?? null,
   }));
 

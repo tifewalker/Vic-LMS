@@ -16,6 +16,8 @@ const probes: { migration: string; table: string; columns: string }[] = [
   { migration: "20261116000000_live_class", table: "classes", columns: "youtube_id, recording_id, live_mode" },
   { migration: "20261116000000_live_class", table: "live_messages", columns: "pinned, reply_to" },
   { migration: "20261116000000_live_class", table: "poll_votes", columns: "poll_id" },
+  { migration: "20261124000000_compulsory_department_level", table: "programmes", columns: "is_compulsory" },
+  { migration: "20261124000000_compulsory_department_level", table: "students", columns: "department, level" },
 ];
 
 /**

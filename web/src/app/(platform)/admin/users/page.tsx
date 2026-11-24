@@ -24,6 +24,8 @@ type User = {
   email: string;
   status: "invited" | "active" | "suspended";
   matric_no: string | null;
+  department: string | null;
+  level: number | null;
   tutor_id: string | null;
 };
 type ListResponse = { users: User[]; total: number; page: number; pageSize: number };
@@ -198,6 +200,23 @@ export default function UsersPage() {
             },
             ...(role !== "admin"
               ? [{ key: "id", header: role === "student" ? "Matric no." : "Tutor ID", cell: (u: User) => <span className="tabular-nums">{u.matric_no ?? u.tutor_id}</span> }]
+              : []),
+            ...(role === "student"
+              ? [
+                  {
+                    key: "dept",
+                    header: "Department and level",
+                    cell: (u: User) =>
+                      u.department || u.level ? (
+                        <>
+                          <span className="block">{u.department ?? "No department"}</span>
+                          {u.level ? <span className="block text-ui-xs text-ink-muted tabular-nums">{u.level} Level</span> : null}
+                        </>
+                      ) : (
+                        <span className="text-ink-muted">Not given</span>
+                      ),
+                  },
+                ]
               : []),
             {
               key: "status",

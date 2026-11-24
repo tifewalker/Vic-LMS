@@ -18,12 +18,13 @@ type Programme = {
   description: string;
   cover_note: string;
   is_active: boolean;
+  is_compulsory: boolean;
   student_count: number;
   tutor_count: number;
   class_count: number;
 };
-type Draft = { id?: string; title: string; description: string; cover_note: string; is_active: boolean };
-const blank: Draft = { title: "", description: "", cover_note: "", is_active: true };
+type Draft = { id?: string; title: string; description: string; cover_note: string; is_active: boolean; is_compulsory: boolean };
+const blank: Draft = { title: "", description: "", cover_note: "", is_active: true, is_compulsory: false };
 
 export default function ProgrammesPage() {
   const toast = useToast();
@@ -74,7 +75,13 @@ export default function ProgrammesPage() {
             value={draft.cover_note}
             onChange={(e) => setDraft({ ...draft, cover_note: e.target.value })}
           />
-          <CheckboxField label="Active" hint="Inactive programmes are hidden from the import list." checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
+          <CheckboxField label="Active" hint="Inactive programmes are hidden from the import list and the registration form." checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
+          <CheckboxField
+            label="Compulsory for every student"
+            hint="New students are enrolled automatically, whether they register themselves or are imported. Students already registered are not changed."
+            checked={draft.is_compulsory}
+            onChange={(e) => setDraft({ ...draft, is_compulsory: e.target.checked })}
+          />
           {error ? <Notice tone="error">{error}</Notice> : null}
           <div className="flex flex-wrap gap-3">
             <Button type="submit" loading={busy} loadingText="Saving…" disabled={!draft.title.trim()}>
@@ -110,7 +117,16 @@ export default function ProgrammesPage() {
                 </>
               ),
             },
-            { key: "state", header: "Status", cell: (p) => <StatusLabel status={p.is_active ? "active" : "draft"} label={p.is_active ? "Active" : "Inactive"} /> },
+            {
+              key: "state",
+              header: "Status",
+              cell: (p) => (
+                <span className="flex flex-wrap gap-2">
+                  <StatusLabel status={p.is_active ? "active" : "draft"} label={p.is_active ? "Active" : "Inactive"} />
+                  {p.is_compulsory ? <StatusLabel status="pinned" label="Compulsory" /> : null}
+                </span>
+              ),
+            },
             { key: "students", header: "Students", numeric: true, cell: (p) => p.student_count },
             { key: "tutors", header: "Tutors", numeric: true, cell: (p) => p.tutor_count },
             { key: "classes", header: "Classes", numeric: true, cell: (p) => p.class_count },
@@ -120,7 +136,7 @@ export default function ProgrammesPage() {
               hiddenHeader: true,
               className: "w-16 md:text-right",
               cell: (p) => (
-                <Button variant="quiet" onClick={() => setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active })}>
+                <Button variant="quiet" onClick={() => setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active, is_compulsory: p.is_compulsory })}>
                   Edit
                 </Button>
               ),

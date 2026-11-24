@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateRows } from "./rows.js";
+import { parseLevel, validateRows } from "./rows.js";
 
 test("valid rows are normalised", () => {
   const { valid, errors } = validateRows([{ matric_no: " csc/24/001 ", full_name: "  Ada   Obi ", email: "ADA@Example.com" }]);
   assert.equal(errors.length, 0);
-  assert.deepEqual(valid[0], { row: 1, matric_no: "CSC/24/001", full_name: "Ada Obi", email: "ada@example.com" });
+  assert.deepEqual(valid[0], { row: 1, matric_no: "CSC/24/001", full_name: "Ada Obi", email: "ada@example.com", department: null, level: null });
 });
 
 test("missing fields and bad emails are flagged per row", () => {
@@ -41,4 +41,20 @@ test("matric numbers shorter than 6 characters are flagged, since they are the f
   const { valid, errors } = validateRows([{ matric_no: "A12", full_name: "A", email: "a@example.com" }]);
   assert.equal(valid.length, 0);
   assert.deepEqual(errors[0], { row: 1, messages: ["Matric number is too short to use as a password (at least 6 characters)."] });
+});
+
+test("department and level are optional, and level accepts 300, 300L or 300 Level", () => {
+  assert.equal(parseLevel(""), null);
+  assert.equal(parseLevel(300), 300);
+  assert.equal(parseLevel("300L"), 300);
+  assert.equal(parseLevel(" 400 level "), 400);
+  assert.ok(Number.isNaN(parseLevel("600")));
+  assert.ok(Number.isNaN(parseLevel("final year")));
+  const { valid, errors } = validateRows([
+    { matric_no: "CSC/24/001", full_name: "Ada Obi", email: "ada@example.com", department: "  Computer   Science ", level: "200L" },
+    { matric_no: "CSC/24/002", full_name: "Bayo Ade", email: "bayo@example.com", level: "700" },
+  ]);
+  assert.equal(valid[0].department, "Computer Science");
+  assert.equal(valid[0].level, 200);
+  assert.deepEqual(errors, [{ row: 2, messages: ["Level must be 100, 200, 300, 400 or 500."] }]);
 });
