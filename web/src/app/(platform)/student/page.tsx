@@ -83,7 +83,7 @@ export default function StudentDashboard() {
       <>
         {header}
         <div className="mt-8">
-          <EmptyState title="You are not in a programme yet." text="The programme admin will enrol you. Your classes and materials will appear here." />
+          <EmptyState title="You are not in a course yet." text="The programme admin will enrol you. Your classes and materials will appear here." />
         </div>
       </>
     );
@@ -174,7 +174,7 @@ export default function StudentDashboard() {
         </section>
 
         <section aria-labelledby="programmes-title">
-          <SectionTitle id="programmes-title">My programmes</SectionTitle>
+          <SectionTitle id="programmes-title">My courses</SectionTitle>
           {data.programmes ? (
             <ul className="mt-4 border-t border-line">
               {data.programmes.map((p) => (

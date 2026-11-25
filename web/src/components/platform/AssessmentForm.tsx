@@ -65,7 +65,7 @@ export function AssessmentForm({
       <TextField label="Title" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} required />
       <TextArea label="Instructions" optional rows={4} value={d.instructions} onChange={(e) => setD({ ...d, instructions: e.target.value })} />
       <SelectField label="For" value={d.class_id} onChange={(e) => setD({ ...d, class_id: e.target.value })}>
-        <option value="">The whole programme</option>
+        <option value="">The whole course</option>
         {classes.map((c) => (
           <option key={c.id} value={c.id}>
             {c.title} ({formatClassTime(c.starts_at, c.ends_at)})

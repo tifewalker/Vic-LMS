@@ -45,6 +45,7 @@ export const programme = {
 
 export const hero = {
   eyebrow: programme.title,
+  partnershipLine,
   /** Line breaks are a layout choice; the words are the copy's, unchanged. */
   headline: ["26 Weeks to Learn.", "Build. Innovate.", "Become an Entrepreneur."],
   strapline: "Powered by practical learning. Driven by innovation. Designed for the future.",
@@ -310,13 +311,14 @@ export const trainingAreas = {
   ] satisfies TrainingArea[],
 } as const;
 
-/** "Who's behind the programme": Crystal Entrepreneurship Centre and OAUSTECH. */
+/** "Who's behind the programme": OAUSTECH, in partnership with Crystal Entrepreneurship Centre. */
 export const behind = {
   kicker: "About Us",
   heading: "Who's Behind the Programme",
+  intro: "The programme is run by OAUSTECH in partnership with Crystal Entrepreneurship Centre.",
   crystal: {
     heading: "Crystal Entrepreneurship Centre",
-    body: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. This programme with OAUSTECH builds on that experience. The photos here are from our past trainings.",
+    body: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. Our partnership with OAUSTECH on this programme builds on that experience. The photos here are from our past trainings.",
   },
   oaustech: {
     heading: "OAUSTECH",
@@ -357,7 +359,7 @@ export const faq = {
     {
       question: "How do I access the programme?",
       answer: [
-        "Applications for this cohort have closed. Students on the programme register on this site with their name, email and matric number, then log in with their email and use their matric number as the password. If you cannot register or log in, contact the programme team on ",
+        "Applications for this cohort have closed. Students on the programme register on this site with their name, email, phone number and matric number (100 Level students who have none yet use their registration number), then log in with their email and use that number as the password. If you cannot register or log in, contact the programme team on ",
         { text: "+234 703 203 8565", link: "phone" },
         ".",
       ],
@@ -384,6 +386,7 @@ export const finalCta = {
     { term: "Programme", description: "Entrepreneurship, ICT/Digital Skills & Emerging Technologies Training Programme" },
     { term: "Duration", description: "26 Weeks" },
     { term: "Institution", description: "Olusegun Agagu University of Science and Technology (OAUSTECH)" },
+    { term: "In partnership with", description: "Crystal Entrepreneurship Centre" },
     { term: "Location", description: "Okitipupa, Ondo State, Nigeria" },
   ] satisfies DefinitionItem[],
   enquiriesLabel: "For enquiries",

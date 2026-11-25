@@ -15,7 +15,9 @@ export type ClassItem = {
   /** How students' live class pages refresh: Supabase Realtime, or a refresh every 25 seconds. */
   live_mode: "realtime" | "light";
   status: "scheduled" | "live" | "ended";
-  programme?: { id?: string; title: string } | null;
+  /** The course outline topic this class covers, if set. */
+  topic: string | null;
+  programme?: { id?: string; title: string; outline?: string[] } | null;
   /** Only in tutor and admin responses. */
   zoom_url?: string | null;
   zoom_passcode?: string | null;

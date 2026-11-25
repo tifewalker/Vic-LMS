@@ -95,7 +95,7 @@ function TutorAssessment() {
     <>
       <AdminBreadcrumbs
         items={[
-          { label: "Programmes", href: "/admin/programmes/" },
+          { label: "Courses", href: "/admin/programmes/" },
           { label: data.programme.title, href: `/admin/programmes/view/?id=${data.programme.id}` },
           { label: a.title },
         ]}
@@ -153,7 +153,7 @@ function TutorAssessment() {
             rows={data.rows}
             rowKey={(r) => r.student_id}
             onRowClick={(r) => (r.submission || a.mode === "paper" ? setGradingId(r.student_id) : undefined)}
-            empty={<EmptyState title="No students enrolled yet." text="Students enrolled in the programme appear here." />}
+            empty={<EmptyState title="No students enrolled yet." text="Students enrolled in the course appear here." />}
             columns={[
               {
                 key: "student",

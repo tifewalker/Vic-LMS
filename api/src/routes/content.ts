@@ -21,7 +21,7 @@ async function readable(req: Request, res: Response, programmeId: string | null 
 }
 async function writable(req: Request, res: Response, programmeId: string | null | undefined) {
   if (!programmeId || !canTeach(await programmeAccess(req.profile!, programmeId))) {
-    res.status(403).json({ error: "Only the programme's tutors and admins can change this." });
+    res.status(403).json({ error: "Only the course's tutors and admins can change this." });
     return false;
   }
   return true;
@@ -87,7 +87,7 @@ export function registerContentRoutes(router: Router) {
     if (!id || !(await writable(req, res, id))) return;
     const body = announcementFields.partial().required({ title: true, body: true }).safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-    if (!(await classBelongs(body.data.class_id, id))) return res.status(400).json({ error: "That class is not part of this programme." });
+    if (!(await classBelongs(body.data.class_id, id))) return res.status(400).json({ error: "That class is not part of this course." });
     const { data, error } = await admin
       .from("announcements")
       .insert({ pinned: false, class_id: null, ...body.data, programme_id: id, author_id: req.profile!.id })
@@ -104,7 +104,7 @@ export function registerContentRoutes(router: Router) {
     if (!(await writable(req, res, a?.programme_id))) return;
     const body = announcementFields.partial().safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-    if (!(await classBelongs(body.data.class_id, a!.programme_id))) return res.status(400).json({ error: "That class is not part of this programme." });
+    if (!(await classBelongs(body.data.class_id, a!.programme_id))) return res.status(400).json({ error: "That class is not part of this course." });
     await admin.from("announcements").update(body.data).eq("id", id);
     res.json({ id });
   });
@@ -145,7 +145,7 @@ export function registerContentRoutes(router: Router) {
     const body = materialCreate.safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
     const m = body.data;
-    if (!(await classBelongs(m.class_id, id))) return res.status(400).json({ error: "That class is not part of this programme." });
+    if (!(await classBelongs(m.class_id, id))) return res.status(400).json({ error: "That class is not part of this course." });
 
     const row: Record<string, unknown> = {
       programme_id: id,
@@ -178,7 +178,7 @@ export function registerContentRoutes(router: Router) {
     if (!(await writable(req, res, m?.programme_id))) return;
     const body = materialBase.partial().safeParse(req.body);
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-    if (!(await classBelongs(body.data.class_id, m!.programme_id))) return res.status(400).json({ error: "That class is not part of this programme." });
+    if (!(await classBelongs(body.data.class_id, m!.programme_id))) return res.status(400).json({ error: "That class is not part of this course." });
     await admin.from("materials").update(body.data).eq("id", id);
     res.json({ id });
   });

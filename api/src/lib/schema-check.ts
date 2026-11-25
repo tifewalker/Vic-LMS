@@ -18,6 +18,13 @@ const probes: { migration: string; table: string; columns: string }[] = [
   { migration: "20261116000000_live_class", table: "poll_votes", columns: "poll_id" },
   { migration: "20261124000000_compulsory_department_level", table: "programmes", columns: "is_compulsory" },
   { migration: "20261124000000_compulsory_department_level", table: "students", columns: "department, level" },
+  { migration: "20261125000000_courses_phone_sex", table: "students", columns: "phone, sex" },
+  { migration: "20261125000000_courses_phone_sex", table: "programmes", columns: "sort_order" },
+  { migration: "20261125010000_one_course_outline", table: "programmes", columns: "outline" },
+  { migration: "20261125010000_one_course_outline", table: "classes", columns: "topic" },
+  { migration: "20261125020000_class_reminders", table: "push_subscriptions", columns: "id" },
+  { migration: "20261125020000_class_reminders", table: "calendar_tokens", columns: "token" },
+  { migration: "20261125020000_class_reminders", table: "classes", columns: "reminder_sent_at" },
 ];
 
 /**

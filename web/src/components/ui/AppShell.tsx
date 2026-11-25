@@ -59,7 +59,7 @@ function buildNav(me: Me, d: NavData): NavGroup[] {
       {
         label: "Teaching",
         items: [
-          { href: "/admin/programmes/", label: "Programmes", icon: BookOpen },
+          { href: "/admin/programmes/", label: "Courses", icon: BookOpen },
           { href: "/admin/classes/", label: "Classes", icon: CalendarDays, also: ["/class/"] },
           { href: "/admin/assessments/", label: "Assessments", icon: ClipboardCheck, count: d.ungraded, countLabel: "to grade", also: ["/tutor/assessment/"] },
         ],
@@ -94,7 +94,7 @@ function buildNav(me: Me, d: NavData): NavGroup[] {
           { href: "/tutor/discussions/", label: "Discussions", icon: MessagesSquare, count: d.unanswered_threads, countLabel: "unanswered" },
         ],
       },
-      { label: "My programmes", items: programmes("/tutor") },
+      { label: "My courses", items: programmes("/tutor") },
     ];
   }
   return [
@@ -102,12 +102,12 @@ function buildNav(me: Me, d: NavData): NavGroup[] {
     {
       label: "Learning",
       items: [
-        { href: "/student/classes/", label: "Classes", icon: CalendarDays, also: ["/class/"] },
+        { href: "/student/classes/", label: "Timetable", icon: CalendarDays, also: ["/class/"] },
         { href: "/student/assessments/", label: "Assessments", icon: ClipboardCheck, count: d.due, countLabel: "due" },
         { href: "/student/progress/", label: "My progress", icon: TrendingUp },
       ],
     },
-    { label: "My programmes", items: programmes("/student") },
+    { label: "My courses", items: programmes("/student") },
   ];
 }
 

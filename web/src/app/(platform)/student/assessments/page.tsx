@@ -25,7 +25,7 @@ export default function StudentAssessmentsPage() {
 
   return (
     <>
-      <PageHeader kicker="Learning" title="Assessments" description="What is due across your programmes. Open one to hand it in." />
+      <PageHeader kicker="Learning" title="Assessments" description="What is due across your courses. Open one to hand it in." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       <div className="mt-6">
         <Tabs

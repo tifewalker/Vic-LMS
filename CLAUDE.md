@@ -46,7 +46,7 @@ web/src/lib/site.ts                   phone, form link, address, urls
 - No emoji in the UI.
 - Keep the British spelling used in the copy (programme, organise, visualisation).
 - Items the copy marks "to be confirmed" (dates, fees, certificates) must not be shown as facts. Hide them or show "Details to be announced".
-- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's calls to action are Register as a student (`/register/`, for students already on the programme, primary in the hero and header) and Log in (`/login/`), both kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students register themselves at `/register/` (name, email, matric number, department, level 100 to 500, and one programme; active at once) or are imported by an admin, then log in with their email or matric number, and the matric number is also their first password; admins set tutor and admin passwords and reset any password from the Users page. Compulsory programmes (client decision, 24 November 2026): Entrepreneurship and Business Development, and Information Technology and Digital Productivity (`programmes.is_compulsory`, editable on the admin Programmes page). Every new student, registered or imported, is enrolled in them automatically and picks exactly one other programme.
+- Phone: +234 703 203 8565 (make it a `tel:` link). Applications for this cohort are closed: the site's calls to action are Register as a student (`/register/`, for students already on the programme, primary in the hero and header) and Log in (`/login/`), both kept in `web/src/lib/site.ts`. Do not add Apply links. There is no account activation and the platform sends no email (client decision, November 2026): students register themselves at `/register/` (name, email, phone, sex, matric number or, for 100 Level students without one, registration number, department and level 100 to 500; active at once) or are imported by an admin, then log in with their email or matric number, and the matric number is also their first password; admins set tutor and admin passwords and reset any password from the Users page. Courses (meeting with the school management, 25 November 2026): in the platform UI the eight training areas are called **courses** (code and tables keep `programme`; the landing page still calls the whole training a programme). Every student takes every active course and is enrolled automatically; Entrepreneurship is the main course and is listed first (`programmes.sort_order` 0). Lectures hold on Wednesdays from 2 pm to 6 pm, and on Saturdays when needed (`web/src/lib/timetable.ts`).
 
 ## Design direction: sweet and neutral, not "AI template"
 
@@ -95,9 +95,9 @@ Removed for good (applications are closed): eligibility, the separate "Who shoul
 ## Branding and images
 
 ### Branding: both brands, side by side
-- OAUSTECH is the host institution. Crystal Entrepreneurship Centre runs the programme.
+- OAUSTECH runs the programme in partnership with Crystal Entrepreneurship Centre.
 - **Header:** OAUSTECH logo and the Crystal Entrepreneurship Centre logo side by side, separated by a thin vertical rule (1px `--line`).
-- **Footer:** include the line "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH".
+- **Partnership wording (client, 25 November 2026):** the school leads: "OAUSTECH in partnership with Crystal Entrepreneurship Centre" (`partnershipLine` in `web/src/lib/site.ts`), shown under the hero kicker, in the About us intro, in the final call to action facts and in the footer. In About us, OAUSTECH comes first.
 - The Crystal Entrepreneurship Centre logo (client supplied, November 2026) is `crystalLogo` in `web/src/content/images.ts`, with a transparent background; `crystalLogoMark` is the same logo without the RC number for small sizes (header, footer, platform sidebar). The original is `web/assets/photo-originals/crystal-logo.jpg`.
 
 ### Images: real photos, self-hosted

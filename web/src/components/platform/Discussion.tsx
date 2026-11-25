@@ -108,7 +108,7 @@ export function Discussion({ base, programmeId, classId, people, canTeach }: { b
       {mutedNow ? <Notice tone="info">{MUTED_NOTICE}</Notice> : null}
       {!writing && !mutedNow && threads?.length ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-ui-sm text-ink-muted">Ask a question or start a discussion. Everyone in the programme can see it.</p>
+          <p className="text-ui-sm text-ink-muted">Ask a question or start a discussion. Everyone in the course can see it.</p>
           <Button size="sm" onClick={() => setWriting(true)}>
             New post
           </Button>
@@ -136,7 +136,7 @@ export function Discussion({ base, programmeId, classId, people, canTeach }: { b
       ) : null}
 
       {threads === null ? <SkeletonRows rows={3} /> : null}
-      {threads?.length === 0 && !writing ? <EmptyState title="No posts yet." text="Ask a question or start a discussion. Everyone in the programme can see it." action={newPost} /> : null}
+      {threads?.length === 0 && !writing ? <EmptyState title="No posts yet." text="Ask a question or start a discussion. Everyone in the course can see it." action={newPost} /> : null}
       {threads?.length ? (
         <ul className="border-t border-line">
           {threads.map((t) => (

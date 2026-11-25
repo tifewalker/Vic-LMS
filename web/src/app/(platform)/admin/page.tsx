@@ -34,13 +34,13 @@ export default function AdminDashboard() {
       <PageHeader
         kicker={me.role === "super_admin" ? "Super admin" : "Admin"}
         title={`Welcome, ${me.full_name.split(" ")[0]}`}
-        description="Programmes and people at a glance."
+        description="Courses and people at a glance."
         actions={
           <>
             <ButtonLink href="/admin/users/import/" variant="secondary">
               Import students
             </ButtonLink>
-            <ButtonLink href="/admin/programmes/">Programmes</ButtonLink>
+            <ButtonLink href="/admin/programmes/">Courses</ButtonLink>
           </>
         }
       />
@@ -66,9 +66,9 @@ export default function AdminDashboard() {
           <Stats
             label="Teaching"
             items={[
-              { label: "Active programmes", value: s?.programmes ?? null, href: "/admin/programmes/" },
+              { label: "Active courses", value: s?.programmes ?? null, href: "/admin/programmes/" },
               { label: "Upcoming classes", value: s?.upcomingClasses ?? null },
-              { label: "Students not in a programme", value: s?.studentsNotEnrolled ?? null, href: "/admin/users/?role=student" },
+              { label: "Students not in a course", value: s?.studentsNotEnrolled ?? null, href: "/admin/users/?role=student" },
             ]}
           />
         </div>

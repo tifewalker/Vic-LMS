@@ -116,7 +116,7 @@ export function Announcements({
       {items?.length === 0 && !draft ? (
         <EmptyState
           title="No announcements yet."
-          text={canTeach ? "Post updates for everyone in the programme here." : "Your tutors' updates will appear here."}
+          text={canTeach ? "Post updates for everyone in the course here." : "Your tutors' updates will appear here."}
           action={newButton}
         />
       ) : null}

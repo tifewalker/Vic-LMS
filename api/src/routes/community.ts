@@ -80,7 +80,7 @@ export function registerCommunityRoutes(router: Router) {
     if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
     if (body.data.class_id) {
       const cls = await classProgramme(body.data.class_id);
-      if (!cls || cls.programme_id !== id) return res.status(400).json({ error: "That class is not part of this programme." });
+      if (!cls || cls.programme_id !== id) return res.status(400).json({ error: "That class is not part of this course." });
     }
     const { data, error } = await admin
       .from("threads")

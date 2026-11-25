@@ -55,11 +55,11 @@ function EditClass() {
         }
       />
       <div className="mt-8">
-        <ClassForm existing={cls} onSaved={() => toast("Class saved.")} />
+        <ClassForm existing={cls} topics={cls.programme?.outline ?? []} onSaved={() => toast("Class saved.")} />
       </div>
       <div className="mt-12 flex flex-wrap items-center justify-between gap-6 border-t border-line pt-6">
         <a href={back} className="text-ui-sm font-semibold text-accent-strong underline decoration-accent/40 underline-offset-[0.22em] hover:decoration-accent-strong">
-          Back to the programme
+          Back to the course
         </a>
         <Button variant="secondary" onClick={remove}>
           Delete this class

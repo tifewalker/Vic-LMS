@@ -8,7 +8,7 @@ import { one } from "../lib/invites.js";
 import { validateRows } from "../lib/rows.js";
 import { requireAuth } from "../middleware/auth.js";
 import { admin, anonClient } from "../supabase.js";
-import { compulsoryProgrammeIds, enrolStudents } from "./programmes.js";
+import { enrolInAllCourses } from "./programmes.js";
 
 export const authRouter = Router();
 
@@ -80,11 +80,11 @@ authRouter.post("/login", byIp(30), loginByIdentifier, async (req, res) => {
 
 /* ---------- Student self-registration (no email is sent) ---------- */
 
-/* GET /auth/programmes: active programmes for the registration form. Compulsory ones are
-   given to everyone; the student picks one of the others. Public. */
+/* GET /auth/programmes: the active courses and their outlines, shown on the registration form.
+   Every student is enrolled in all of them. Public. */
 authRouter.get("/programmes", byIp(60), async (_req, res) => {
-  const { data, error } = await admin.from("programmes").select("id, title, is_compulsory").eq("is_active", true).order("title");
-  if (error) return res.status(500).json({ error: "Could not load the programmes." });
+  const { data, error } = await admin.from("programmes").select("id, title, outline").eq("is_active", true).order("sort_order").order("title");
+  if (error) return res.status(500).json({ error: "Could not load the courses." });
   res.json({ programmes: data });
 });
 
@@ -95,43 +95,37 @@ const registerBody = z.object({
   matric_no: z.string().max(60),
   department: z.string().max(200),
   level: z.union([z.number(), z.string()]),
-  /** The one non-compulsory programme the student picks. */
-  programme_id: z.uuid(),
+  phone: z.string().max(40),
+  sex: z.string().max(20),
 });
 
 /**
  * POST /auth/register: a student creates their own account. It is active at once; the
- * password is the matric number. They are enrolled in every compulsory programme plus the one
- * they picked. Students on one campus network share an address, so the per-address limit is generous.
+ * password is the matric number, or the registration number for 100 Level students who have
+ * no matric number yet. They are enrolled in every active course. Students on one campus
+ * network share an address, so the per-address limit is generous.
  */
 authRouter.post("/register", byIp(40), async (req, res) => {
   const body = registerBody.safeParse(req.body);
-  if (!body.success) {
-    const missingProgramme = body.error.issues.some((i) => i.path[0] === "programme_id");
-    return res.status(400).json({ error: missingProgramme ? "Choose your programme." : "Fill in every field and try again." });
-  }
+  if (!body.success) return res.status(400).json({ error: "Fill in every field and try again." });
 
   const { valid, errors } = validateRows([body.data]);
   if (errors.length) return res.status(400).json({ error: errors[0].messages.join(" ") });
   const row = valid[0];
   if (!MATRIC_CHARS.test(row.matric_no)) {
-    return res.status(400).json({ error: "Matric number can only contain letters, numbers and the characters / - ." });
+    return res.status(400).json({ error: "Matric or registration number can only contain letters, numbers and the characters / - ." });
   }
+  if (!row.phone) return res.status(400).json({ error: "Enter your phone number." });
+  if (!row.sex) return res.status(400).json({ error: "Choose your sex." });
   if (!row.department) return res.status(400).json({ error: "Enter your department." });
   if (row.level === null) return res.status(400).json({ error: "Choose your level." });
 
-  const { data: chosen, error: progErr } = await admin
-    .from("programmes")
-    .select("id, is_compulsory")
-    .eq("id", body.data.programme_id)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (progErr) return res.status(500).json({ error: "Could not check the programme. Please try again." });
-  if (!chosen) return res.status(400).json({ error: "That programme is no longer available. Reload the page and choose again." });
-  if (chosen.is_compulsory) return res.status(400).json({ error: "That programme is already included for everyone. Choose one of the others." });
-
   const { data: taken } = await admin.from("students").select("profile_id").eq("matric_no", row.matric_no).maybeSingle();
-  if (taken) return res.status(409).json({ error: "This matric number is already registered. Log in instead, or contact the programme team if it is not yours." });
+  if (taken) {
+    return res
+      .status(409)
+      .json({ error: "This matric or registration number is already registered. Log in instead, or contact the programme team if it is not yours." });
+  }
 
   const created = await createAccount({ role: "student", ...row, password: row.matric_no });
   if (!created.ok) {
@@ -142,8 +136,7 @@ authRouter.post("/register", byIp(40), async (req, res) => {
   // The account exists even if an enrolment fails; the admin can enrol them from the admin pages.
   let enrolled = true;
   try {
-    const ids = [...(await compulsoryProgrammeIds()), chosen.id];
-    for (const pid of ids) if ("error" in (await enrolStudents(pid, [created.profileId]))) enrolled = false;
+    enrolled = await enrolInAllCourses([created.profileId]);
   } catch {
     enrolled = false;
   }

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Announcements } from "@/components/platform/Announcements";
 import { ClassList } from "@/components/platform/ClassList";
+import { CourseOutline } from "@/components/platform/CourseOutline";
 import { Discussion } from "@/components/platform/Discussion";
 import { Materials } from "@/components/platform/Materials";
 import { StudentAssessments } from "@/components/platform/StudentAssessments";
@@ -15,19 +16,19 @@ import { api } from "@/lib/api";
 import type { ClassItem, People, StudentAssessment } from "@/lib/types";
 
 type Detail = {
-  programme: { id: string; title: string; description: string; cover_note: string };
+  programme: { id: string; title: string; description: string; cover_note: string; outline: string[] };
   classes: ClassItem[];
   tutors: string[];
   assessments: StudentAssessment[];
   people: People;
 };
-type Tab = "announcements" | "classes" | "materials" | "assessments" | "discussion";
+type Tab = "announcements" | "outline" | "classes" | "materials" | "assessments" | "discussion";
 
 function StudentProgramme() {
   const id = useSearchParams().get("id") ?? "";
   const [data, setData] = useState<Detail | null>(null);
   const [tab, setTab] = useState<Tab>(() => (typeof window !== "undefined" && window.location.hash === "#assessments" ? "assessments" : "announcements"));
-  const [error, setError] = useState(id ? "" : "No programme was chosen.");
+  const [error, setError] = useState(id ? "" : "No course was chosen.");
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -41,18 +42,19 @@ function StudentProgramme() {
   return (
     <>
       <PageHeader
-        kicker="Programme"
+        kicker="Course"
         title={data.programme.title}
         description={data.programme.cover_note || data.programme.description}
         meta={<span>{data.tutors.length ? `${data.tutors.length === 1 ? "Tutor" : "Tutors"}: ${data.tutors.join(", ")}` : "Tutor to be assigned"}</span>}
       />
       <div className="mt-6">
         <Tabs
-          label="Programme sections"
+          label="Course sections"
           value={tab}
           onChange={setTab}
           tabs={[
             { id: "announcements", label: "Announcements" },
+            { id: "outline", label: "Course outline", count: data.programme.outline.length },
             { id: "classes", label: "Classes", count: data.classes.length },
             { id: "materials", label: "Materials" },
             { id: "assessments", label: "Assessments", count: data.assessments.length },
@@ -62,6 +64,7 @@ function StudentProgramme() {
       </div>
       <div className="mt-8">
         {tab === "announcements" ? <Announcements base="/student" programmeId={id} classes={data.classes} canTeach={false} /> : null}
+        {tab === "outline" ? <CourseOutline outline={data.programme.outline} classes={data.classes} /> : null}
         {tab === "classes" ? <ClassList classes={data.classes} /> : null}
         {tab === "materials" ? <Materials base="/student" programmeId={id} canTeach={false} /> : null}
         {tab === "assessments" ? <StudentAssessments items={data.assessments} onChange={() => setReloadKey((k) => k + 1)} /> : null}

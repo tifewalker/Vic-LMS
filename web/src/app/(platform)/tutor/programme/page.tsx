@@ -6,6 +6,7 @@ import { Announcements } from "@/components/platform/Announcements";
 import { AssessmentForm } from "@/components/platform/AssessmentForm";
 import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { ClassList } from "@/components/platform/ClassList";
+import { CourseOutline } from "@/components/platform/CourseOutline";
 import { Discussion } from "@/components/platform/Discussion";
 import { Materials } from "@/components/platform/Materials";
 import { Button } from "@/components/ui/Button";
@@ -21,12 +22,12 @@ import { api } from "@/lib/api";
 import type { Assessment, ClassItem, People } from "@/lib/types";
 
 type Detail = {
-  programme: { id: string; title: string; description: string; cover_note: string };
+  programme: { id: string; title: string; description: string; cover_note: string; outline: string[] };
   classes: ClassItem[];
   students: { id: string; full_name: string; email: string; status: string; matric_no: string }[];
   assessments: Assessment[];
 };
-type Tab = "classes" | "announcements" | "materials" | "students" | "assessments" | "discussion";
+type Tab = "classes" | "outline" | "announcements" | "materials" | "students" | "assessments" | "discussion";
 
 function TutorProgramme() {
   const id = useSearchParams().get("id") ?? "";
@@ -34,7 +35,7 @@ function TutorProgramme() {
   const [data, setData] = useState<Detail | null>(null);
   const [tab, setTab] = useState<Tab>("classes");
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState(id ? "" : "No programme was chosen.");
+  const [error, setError] = useState(id ? "" : "No course was chosen.");
 
   useEffect(() => {
     if (!id) return;
@@ -49,16 +50,16 @@ function TutorProgramme() {
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: "Programmes", href: "/admin/programmes/" }, { label: data.programme.title }]} />
+      <AdminBreadcrumbs items={[{ label: "Courses", href: "/admin/programmes/" }, { label: data.programme.title }]} />
       <PageHeader
-        kicker="Programme"
+        kicker="Course"
         title={data.programme.title}
         description={data.programme.description}
         actions={tab === "assessments" && !creating ? newAssessment : null}
       />
       <div className="mt-6">
         <Tabs
-          label="Programme sections"
+          label="Course sections"
           value={tab}
           onChange={(t) => {
             setTab(t);
@@ -66,6 +67,7 @@ function TutorProgramme() {
           }}
           tabs={[
             { id: "classes", label: "Classes", count: data.classes.length },
+            { id: "outline", label: "Course outline", count: data.programme.outline.length },
             { id: "announcements", label: "Announcements" },
             { id: "materials", label: "Materials" },
             { id: "students", label: "Students", count: data.students.length },
@@ -77,6 +79,7 @@ function TutorProgramme() {
 
       <div className="mt-8 space-y-6">
         {tab === "classes" ? <ClassList classes={data.classes} emptyText="The programme admin schedules classes; they will appear here." /> : null}
+        {tab === "outline" ? <CourseOutline outline={data.programme.outline} classes={data.classes} /> : null}
         {tab === "announcements" ? <Announcements base="/tutor" programmeId={id} classes={data.classes} canTeach /> : null}
         {tab === "materials" ? <Materials base="/tutor" programmeId={id} canTeach /> : null}
 

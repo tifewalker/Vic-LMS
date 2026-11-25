@@ -15,13 +15,13 @@ export default function AdminAnnouncementsPage() {
   const { data, error } = useLoad<{ announcements: Row[] }>("/tutor/announcements");
   return (
     <>
-      <PageHeader kicker="Live and community" title="Announcements" description="Every announcement across the programmes. To post or edit one, open its programme." />
+      <PageHeader kicker="Live and community" title="Announcements" description="Every announcement across the courses. To post or edit one, open its course." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       <div className="mt-6">
         {!data ? (
           <SkeletonRows rows={4} />
         ) : data.announcements.length === 0 ? (
-          <EmptyState title="No announcements yet." text="Announcements posted in any programme appear here." />
+          <EmptyState title="No announcements yet." text="Announcements posted in any course appear here." />
         ) : (
           <ul className="border-t border-line">
             {data.announcements.map((a) => (

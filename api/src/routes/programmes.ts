@@ -30,17 +30,20 @@ const programmeFields = z.object({
   description: z.string().trim().max(2000),
   cover_note: z.string().trim().max(2000),
   is_active: z.boolean(),
-  /** Every student is enrolled in compulsory programmes (registration and import). */
-  is_compulsory: z.boolean(),
+  /** Lower is listed first. Entrepreneurship, the main course, is 0. */
+  sort_order: z.number().int().min(0).max(999),
+  /** The course outline: its topics, in teaching order. */
+  outline: z.array(z.string().trim().min(1, "A topic is empty.").max(200, "A topic is too long.")).max(40, "Use at most 40 topics."),
 });
 const programmeCreate = programmeFields.partial().required({ title: true });
 
 programmesRouter.get("/programmes", async (_req, res) => {
   const { data, error } = await admin
     .from("programmes")
-    .select("id, title, slug, description, cover_note, is_active, is_compulsory, created_at, programme_students(count), programme_tutors(count), classes(count)")
+    .select("id, title, slug, description, cover_note, is_active, sort_order, outline, created_at, programme_students(count), programme_tutors(count), classes(count)")
+    .order("sort_order")
     .order("title");
-  if (error) return res.status(500).json({ error: "Could not load programmes." });
+  if (error) return res.status(500).json({ error: "Could not load courses." });
   res.json({
     programmes: data.map(({ programme_students, programme_tutors, classes, ...p }) => ({
       ...p,
@@ -63,13 +66,19 @@ programmesRouter.post("/programmes", async (req, res) => {
     .single();
   if (error) {
     const dup = error.code === "23505";
-    return res.status(dup ? 409 : 500).json({ error: dup ? "A programme with this title already exists." : "Could not save the programme." });
+    return res.status(dup ? 409 : 500).json({ error: dup ? "A course with this title already exists." : "Could not save the course." });
   }
-  res.status(201).json({ id: data.id });
+  // Every student takes every course, so a new active course starts with everyone in it.
+  let enrolled = 0;
+  if (body.data.is_active !== false) {
+    const result = await enrolAllStudents(data.id);
+    enrolled = "error" in result ? 0 : result.added;
+  }
+  res.status(201).json({ id: data.id, enrolled });
 });
 
 programmesRouter.patch("/programmes/:id", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
   const body = programmeFields.partial().safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
@@ -77,17 +86,17 @@ programmesRouter.patch("/programmes/:id", async (req, res) => {
   const { data, error } = await admin.from("programmes").update(update).eq("id", id).select("id");
   if (error) {
     const dup = error.code === "23505";
-    return res.status(dup ? 409 : 500).json({ error: dup ? "Another programme already uses this slug." : "Could not save the programme." });
+    return res.status(dup ? 409 : 500).json({ error: dup ? "Another course already uses this slug." : "Could not save the course." });
   }
-  if (!data.length) return res.status(404).json({ error: "Programme not found." });
+  if (!data.length) return res.status(404).json({ error: "Course not found." });
   res.json({ id });
 });
 
 programmesRouter.get("/programmes/:id", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
-  const { data: programme } = await admin.from("programmes").select("id, title, slug, description, cover_note, is_active, created_at").eq("id", id).maybeSingle();
-  if (!programme) return res.status(404).json({ error: "Programme not found." });
+  const { data: programme } = await admin.from("programmes").select("id, title, slug, description, cover_note, is_active, outline, created_at").eq("id", id).maybeSingle();
+  if (!programme) return res.status(404).json({ error: "Course not found." });
 
   const [students, tutors, classes, assessments] = await Promise.all([
     admin.from("programme_students").select("enrolled_at, student:students!inner(matric_no, profile:profiles!inner(id, full_name, email, status))").eq("programme_id", id),
@@ -118,7 +127,7 @@ programmesRouter.get("/programmes/:id", async (req, res) => {
 
 /** Students not yet in this programme, or tutors not yet teaching it. */
 programmesRouter.get("/programmes/:id/candidates", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
   const q = z.object({ type: z.enum(["students", "tutors"]), q: z.string().trim().max(100).default("") }).safeParse(req.query);
   if (!q.success) return res.status(400).json({ error: "Invalid request." });
@@ -162,13 +171,37 @@ programmesRouter.get("/programmes/:id/candidates", async (req, res) => {
 
 const idList = z.array(z.uuid()).min(1, "Choose at least one person.").max(500);
 
-/** Enrols students in a programme. Used by the enrol endpoint and by the student import. */
-/** Active programmes every student must take. */
-export async function compulsoryProgrammeIds(): Promise<string[]> {
-  const { data, error } = await admin.from("programmes").select("id").eq("is_compulsory", true).eq("is_active", true);
+/** Every active course. Every student takes all of them (registration and import enrol into these). */
+export async function activeProgrammeIds(): Promise<string[]> {
+  const { data, error } = await admin.from("programmes").select("id").eq("is_active", true);
   if (error) throw error;
   return data.map((p) => p.id);
 }
+
+/** Enrols the given students in every active course. Returns false if any enrolment failed. */
+export async function enrolInAllCourses(studentIds: string[]): Promise<boolean> {
+  if (!studentIds.length) return true;
+  let ok = true;
+  for (const pid of await activeProgrammeIds()) if ("error" in (await enrolStudents(pid, studentIds))) ok = false;
+  return ok;
+}
+
+/** Enrols every student in one course, in pages. */
+async function enrolAllStudents(programmeId: string) {
+  let added = 0;
+  for (let from = 0; ; from += 500) {
+    const { data, error } = await admin.from("students").select("profile_id").order("profile_id").range(from, from + 499);
+    if (error) return { error: "Could not enrol the students." };
+    if (!data.length) break;
+    const r = await enrolStudents(programmeId, data.map((s) => s.profile_id));
+    if ("error" in r) return r;
+    added += r.added;
+    if (data.length < 500) break;
+  }
+  return { added };
+}
+
+/** Enrols students in a course. Used by the enrol endpoint and by the student import. */
 
 export async function enrolStudents(programmeId: string, studentIds: string[]) {
   const { data: real } = await admin.from("students").select("profile_id").in("profile_id", studentIds);
@@ -183,12 +216,12 @@ export async function enrolStudents(programmeId: string, studentIds: string[]) {
 }
 
 programmesRouter.post("/programmes/:id/students", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
   const body = z.object({ student_ids: idList }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
   const { data: p } = await admin.from("programmes").select("id").eq("id", id).maybeSingle();
-  if (!p) return res.status(404).json({ error: "Programme not found." });
+  if (!p) return res.status(404).json({ error: "Course not found." });
   const result = await enrolStudents(id, [...new Set(body.data.student_ids)]);
   if ("error" in result) return res.status(500).json(result);
   res.json(result);
@@ -203,12 +236,12 @@ programmesRouter.delete("/programmes/:id/students/:studentId", async (req, res) 
 });
 
 programmesRouter.post("/programmes/:id/tutors", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
   const body = z.object({ tutor_ids: idList }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
   const { data: p } = await admin.from("programmes").select("id").eq("id", id).maybeSingle();
-  if (!p) return res.status(404).json({ error: "Programme not found." });
+  if (!p) return res.status(404).json({ error: "Course not found." });
   const ids = [...new Set(body.data.tutor_ids)];
   const { data: real } = await admin.from("tutors").select("profile_id").in("profile_id", ids);
   const valid = (real ?? []).map((r) => r.profile_id);
@@ -241,6 +274,8 @@ const classFields = z.object({
     youtube_url: youtubeField.optional(),
     recording_url: youtubeField.optional(),
     status: z.enum(["scheduled", "live", "ended"]).optional(),
+    /** The course outline topic this class covers. Empty means none. */
+    topic: z.string().trim().max(200).transform((v) => v || null).optional(),
     live_mode: z.enum(["realtime", "light"]).optional(),
     zoom_url: url.optional(),
     zoom_passcode: z.string().trim().max(100).optional(),
@@ -261,13 +296,13 @@ async function saveZoom(classId: string, zoom_url: string | null | undefined, zo
 }
 
 programmesRouter.post("/programmes/:id/classes", async (req, res) => {
-  const id = idParam(req.params.id, res, "Programme not found.");
+  const id = idParam(req.params.id, res, "Course not found.");
   if (!id) return;
   const body = classBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
   const { zoom_url, zoom_passcode, ...fields } = body.data;
   const { data, error } = await admin.from("classes").insert({ ...classColumns(fields), programme_id: id }).select("id").single();
-  if (error) return res.status(error.code === "23503" ? 404 : 500).json({ error: error.code === "23503" ? "Programme not found." : "Could not create the class." });
+  if (error) return res.status(error.code === "23503" ? 404 : 500).json({ error: error.code === "23503" ? "Course not found." : "Could not create the class." });
   await saveZoom(data.id, zoom_url, zoom_passcode);
   res.status(201).json({ id: data.id });
 });
@@ -276,7 +311,7 @@ programmesRouter.get("/classes/:id", async (req, res) => {
   const id = idParam(req.params.id, res, "Class not found.");
   if (!id) return;
   const [{ data: cls }, { data: links }] = await Promise.all([
-    admin.from("classes").select(`${CLASS_COLUMNS}, programme:programmes(id, title)`).eq("id", id).maybeSingle(),
+    admin.from("classes").select(`${CLASS_COLUMNS}, programme:programmes(id, title, outline)`).eq("id", id).maybeSingle(),
     admin.from("class_tutor_links").select("zoom_url, zoom_passcode").eq("class_id", id).maybeSingle(),
   ]);
   if (!cls) return res.status(404).json({ error: "Class not found." });
@@ -289,7 +324,8 @@ programmesRouter.patch("/classes/:id", async (req, res) => {
   const body = classFields.partial().safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
   const { zoom_url, zoom_passcode, ...fields } = body.data;
-  const cls = classColumns(fields);
+  // A class moved to a new time gets a fresh reminder.
+  const cls = { ...classColumns(fields), ...(fields.starts_at ? { reminder_sent_at: null } : {}) };
   if (Object.keys(cls).length) {
     const { data, error } = await admin.from("classes").update(cls).eq("id", id).select("id");
     if (error) return res.status(400).json({ error: error.code === "23514" ? "The class must end after it starts." : "Could not save the class." });

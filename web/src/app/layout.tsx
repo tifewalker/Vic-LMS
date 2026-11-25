@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   },
   description,
   applicationName: site.shortName,
+  icons: { apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "OAUSTECH Training", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "en_GB",

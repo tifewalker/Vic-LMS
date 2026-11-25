@@ -11,7 +11,7 @@ export const site = {
   shortName: "OAUSTECH Training Programme",
 
   /**
-   * The organisation that runs the programme. The API keeps a copy of these
+   * OAUSTECH's partner on the programme. The API keeps a copy of these
    * strings in api/src/lib/brand.ts; a test there fails if the two drift apart.
    */
   operator: {
@@ -41,12 +41,12 @@ export const site = {
   /** Applications for this cohort are closed. Registered participants use the platform. */
   platform: {
     login: "/login/",
-    /** Students register themselves here (name, email, matric number, programmes). No email is sent. */
+    /** Students register themselves here (name, email, phone, sex, matric or registration number, department, level). No email is sent. */
     register: "/register/",
   },
 } as const;
 
-/** "Delivered by Crystal Entrepreneurship Centre in partnership with OAUSTECH" */
-export const partnershipLine = `Delivered by ${site.operator.name} in partnership with ${site.institution.shortName}`;
+/** "OAUSTECH in partnership with Crystal Entrepreneurship Centre": the school leads, Crystal is its partner (client, 25 November 2026). */
+export const partnershipLine = `${site.institution.shortName} in partnership with ${site.operator.name}`;
 
 export type Site = typeof site;

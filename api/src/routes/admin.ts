@@ -8,7 +8,7 @@ import { validateRows } from "../lib/rows.js";
 import { passwordProblems } from "../lib/tokens.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { admin } from "../supabase.js";
-import { compulsoryProgrammeIds, enrolStudents } from "./programmes.js";
+import { enrolInAllCourses } from "./programmes.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole("admin", "super_admin"));
@@ -41,17 +41,11 @@ adminRouter.get("/summary", async (_req, res) => {
 });
 
 /* POST /admin/students/import */
-const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS), programme_id: z.uuid().optional() });
+const importBody = z.object({ rows: z.array(z.unknown()).min(1).max(MAX_IMPORT_ROWS) });
 
 adminRouter.post("/students/import", importLimiter, async (req, res) => {
   const body = importBody.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: `Send between 1 and ${MAX_IMPORT_ROWS} rows.` });
-
-  const programmeId = body.data.programme_id;
-  if (programmeId) {
-    const { data: programme } = await admin.from("programmes").select("id").eq("id", programmeId).maybeSingle();
-    if (!programme) return res.status(400).json({ error: "That programme no longer exists. Choose another one." });
-  }
 
   const { valid, errors } = validateRows(body.data.rows);
   const [takenEmails, takenMatrics] = await Promise.all([
@@ -69,7 +63,7 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
       continue;
     }
     if (takenMatrics.has(r.matric_no)) {
-      skipped.push({ row: r.row, reason: "This matric number is already registered." });
+      skipped.push({ row: r.row, reason: "This matric or registration number is already registered." });
       continue;
     }
     // A student's first password is their matric number, as stored (trimmed, uppercase).
@@ -80,13 +74,8 @@ adminRouter.post("/students/import", importLimiter, async (req, res) => {
     } else skipped.push({ row: r.row, reason: result.reason });
   }
 
-  let enrolled: { added: number } | null = null;
-  if (programmeId && createdIds.length) {
-    const added = await enrolStudents(programmeId, createdIds);
-    enrolled = "error" in added ? { added: 0 } : { added: added.added };
-  }
-  // Everyone takes the compulsory programmes.
-  if (createdIds.length) for (const pid of await compulsoryProgrammeIds()) if (pid !== programmeId) await enrolStudents(pid, createdIds);
+  // Every student takes every active course.
+  const enrolled = await enrolInAllCourses(createdIds);
 
   if (created > 0) {
     const { error: logError } = await admin.from("import_log").insert({ admin_id: req.profile!.id, created_count: created });
@@ -144,7 +133,7 @@ adminRouter.get("/users", async (req, res) => {
   let list = admin
     .from("profiles")
     .select(
-      "id, role, full_name, email, status, created_at, students(matric_no, department, level), tutors(tutor_id)",
+      "id, role, full_name, email, status, created_at, students(matric_no, department, level, phone, sex), tutors(tutor_id)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -181,6 +170,8 @@ adminRouter.get("/users", async (req, res) => {
     matric_no: (one(u.students as unknown as { matric_no: string }[]) ?? null)?.matric_no ?? null,
     department: (one(u.students as unknown as { department: string | null }[]) ?? null)?.department ?? null,
     level: (one(u.students as unknown as { level: number | null }[]) ?? null)?.level ?? null,
+    phone: (one(u.students as unknown as { phone: string | null }[]) ?? null)?.phone ?? null,
+    sex: (one(u.students as unknown as { sex: string | null }[]) ?? null)?.sex ?? null,
     tutor_id: (one(u.tutors as unknown as { tutor_id: string }[]) ?? null)?.tutor_id ?? null,
   }));
 

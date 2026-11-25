@@ -2,7 +2,7 @@
 > - About: "Why participate?" and "What you can expect to gain" are merged into one list of six, "What You Will Gain", using wording from both lists. Under it: "Open to students, graduates, aspiring entrepreneurs and professionals who want practical skills."
 > - Training areas: each "What you will gain" is shortened to one line.
 > - Removed: Who should participate (now the one line above), Eligibility requirements, What you can expect to gain, Why OAUSTECH (now part of the section below), the "Do I need prior experience" and certificate FAQs.
-> - New section "Who's Behind the Programme": Crystal Entrepreneurship Centre: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. This programme with OAUSTECH builds on that experience. The photos here are from our past trainings." OAUSTECH: the first and last paragraphs of Why OAUSTECH, with the motto set large. Then "From Our Past Trainings", a photo gallery.
+> - New section "Who's Behind the Programme": Crystal Entrepreneurship Centre: "Crystal Entrepreneurship Centre delivers practical training in entrepreneurship and digital skills. Our sessions are hands-on: participants learn by doing, work with real tools and leave with skills they can use straight away. Our partnership with OAUSTECH on this programme builds on that experience. The photos here are from our past trainings." OAUSTECH: the first and last paragraphs of Why OAUSTECH, with the motto set large. Then "From Our Past Trainings", a photo gallery.
 > The text in `web/src/content/landing.ts` is the source for the live wording.
 
 # OAUSTECH ENTREPRENEURSHIP, ICT, DIGITAL SKILLS & EMERGING TECHNOLOGIES TRAINING PROGRAMME
@@ -345,7 +345,7 @@ Certificate arrangements should be confirmed by the programme organisers. Please
 
 ### 7. How do I access the programme?
 
-Applications for this cohort have closed. Students on the programme register on this site with their name, email and matric number, then log in with their email and use their matric number as the password. If you cannot register or log in, contact the programme team on +234 703 203 8565.
+Applications for this cohort have closed. Students on the programme register on this site with their name, email, phone number and matric number (100 Level students who have none yet use their registration number), then log in with their email and use that number as the password. If you cannot register or log in, contact the programme team on +234 703 203 8565.
 
 ### 8. Who can I contact for enquiries?
 

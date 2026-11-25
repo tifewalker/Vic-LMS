@@ -40,7 +40,7 @@ teachRouter.get("/programmes", async (req, res) => {
   }
   if (programmeIds && !programmeIds.length) return res.json({ programmes: [], upcoming: [] });
 
-  let pq = admin.from("programmes").select("id, title, description, is_active, programme_students(count)").order("title");
+  let pq = admin.from("programmes").select("id, title, description, is_active, programme_students(count)").order("sort_order").order("title");
   let cq = admin
     .from("classes")
     .select(`${CLASS_COLUMNS}, programme:programmes(title)`)
@@ -66,7 +66,7 @@ teachRouter.get("/programmes/:id", async (req, res) => {
   const id = idParam(req.params.id, res);
   if (!id || !(await teaches(req, res, id))) return;
   const [{ data: programme }, classes, students, assessments] = await Promise.all([
-    admin.from("programmes").select("id, title, description, cover_note, is_active").eq("id", id).single(),
+    admin.from("programmes").select("id, title, description, cover_note, is_active, outline").eq("id", id).single(),
     admin.from("classes").select(CLASS_COLUMNS).eq("programme_id", id).order("starts_at"),
     admin.from("programme_students").select("student:students!inner(matric_no, profile:profiles!inner(id, full_name, email, status))").eq("programme_id", id),
     admin.from("assessments").select(`${ASSESSMENT_COLUMNS}, submissions(count)`).eq("programme_id", id).order("created_at", { ascending: false }),
@@ -154,7 +154,7 @@ teachRouter.post("/programmes/:id/assessments", async (req, res) => {
   if (!id || !(await teaches(req, res, id))) return;
   const body = assessmentCreate.safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-  if (!(await classBelongs(body.data.class_id, id))) return res.status(400).json({ error: "That class is not part of this programme." });
+  if (!(await classBelongs(body.data.class_id, id))) return res.status(400).json({ error: "That class is not part of this course." });
   const { data, error } = await admin
     .from("assessments")
     .insert({ ...assessmentDefaults, ...body.data, programme_id: id, created_by: req.profile!.id })
@@ -171,7 +171,7 @@ teachRouter.patch("/assessments/:id", async (req, res) => {
   if (!(await teaches(req, res, a?.programme_id)) || !a) return;
   const body = assessmentFields.extend({ attachment_path: z.string().max(500).nullable() }).partial().safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-  if (!(await classBelongs(body.data.class_id, a.programme_id))) return res.status(400).json({ error: "That class is not part of this programme." });
+  if (!(await classBelongs(body.data.class_id, a.programme_id))) return res.status(400).json({ error: "That class is not part of this course." });
   const path = body.data.attachment_path;
   if (path && (!path.startsWith(`${assessmentPrefix(id)}/`) || !(await fileExists(path)))) {
     return res.status(400).json({ error: "Upload the file first." });
@@ -256,7 +256,7 @@ teachRouter.post("/assessments/:id/paper", async (req, res) => {
   if (!body.success) return res.status(400).json({ error: "Invalid request." });
   const a = await loadAssessment(id);
   if (!(await teaches(req, res, a?.programme_id)) || !a) return;
-  if (!(await isEnrolled(a.programme_id, body.data.student_id))) return res.status(400).json({ error: "That student is not in this programme." });
+  if (!(await isEnrolled(a.programme_id, body.data.student_id))) return res.status(400).json({ error: "That student is not in this course." });
 
   const { data: sub } = await admin.from("submissions").select("id, status").eq("assessment_id", id).eq("student_id", body.data.student_id).maybeSingle();
   if (body.data.received) {
@@ -282,7 +282,7 @@ teachRouter.post("/assessments/:id/grade", async (req, res) => {
     })
     .safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: zodMessage(body.error) });
-  if (!(await isEnrolled(a.programme_id, body.data.student_id))) return res.status(400).json({ error: "That student is not in this programme." });
+  if (!(await isEnrolled(a.programme_id, body.data.student_id))) return res.status(400).json({ error: "That student is not in this course." });
 
   let { data: sub } = await admin.from("submissions").select("id").eq("assessment_id", id).eq("student_id", body.data.student_id).maybeSingle();
   if (!sub) {

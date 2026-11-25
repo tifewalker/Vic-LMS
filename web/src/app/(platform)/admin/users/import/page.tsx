@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
-import { FileField, SelectField } from "@/components/ui/Field";
+import { FileField } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
 import { PageHeader, SectionTitle } from "@/components/ui/PageHeader";
 import { StatusLabel } from "@/components/ui/StatusLabel";
@@ -15,9 +15,9 @@ type ImportResult = {
   created: number;
   skipped: { row: number; reason: string }[];
   errors: { row: number; messages: string[] }[];
-  enrolled: { added: number } | null;
+  /** False if adding someone to a course failed; they can be enrolled from the course page. */
+  enrolled: boolean;
 };
-type ProgrammeOption = { id: string; title: string; is_active: boolean; is_compulsory: boolean };
 
 export default function ImportPage() {
   const toast = useToast();
@@ -26,14 +26,6 @@ export default function ImportPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ data: ImportResult; lines: number[] } | null>(null);
-  const [programmes, setProgrammes] = useState<ProgrammeOption[]>([]);
-  const [programmeId, setProgrammeId] = useState("");
-
-  useEffect(() => {
-    api<{ programmes: ProgrammeOption[] }>("/admin/programmes").then((res) => {
-      if (res.ok) setProgrammes(res.data.programmes.filter((p) => p.is_active));
-    });
-  }, []);
 
   const valid = rows?.filter((r) => r.problems.length === 0) ?? [];
   const invalid = rows ? rows.length - valid.length : 0;
@@ -55,8 +47,8 @@ export default function ImportPage() {
   async function onConfirm() {
     setBusy(true);
     setError("");
-    const send = valid.map(({ matric_no, full_name, email, department, level }) => ({ matric_no, full_name, email, department, level }));
-    const res = await api<ImportResult>("/admin/students/import", { body: { rows: send, ...(programmeId ? { programme_id: programmeId } : {}) } });
+    const send = valid.map(({ matric_no, full_name, email, department, level, phone, sex }) => ({ matric_no, full_name, email, department, level, phone, sex }));
+    const res = await api<ImportResult>("/admin/students/import", { body: { rows: send } });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     // The API numbers rows from 1 in the order sent; map back to file line numbers.
@@ -64,8 +56,6 @@ export default function ImportPage() {
     toast(`Created ${res.data.created} student${res.data.created === 1 ? "" : "s"}.`);
     setRows(null);
   }
-
-  const compulsoryNames = programmes.filter((p) => p.is_compulsory).map((p) => p.title).join(" and ");
 
   const notImported = result
     ? [
@@ -79,7 +69,7 @@ export default function ImportPage() {
       <PageHeader
         kicker="People"
         title="Import students"
-        description="Upload a .csv or .xlsx file with matric_no, full_name and email, and optionally department and level. Everyone is enrolled in the compulsory programmes automatically. You see a preview before anything is saved. Students log in with their matric number, which is also their first password. No emails are sent."
+        description="Upload a .csv or .xlsx file with matric_no, full_name and email, and optionally phone, sex, department and level. For 100 Level students with no matric number yet, put their registration number in matric_no. Everyone is enrolled in every active course. You see a preview before anything is saved. Students log in with that number, which is also their first password. No emails are sent."
         actions={
           <ButtonLink href="/templates/students-template.csv" download variant="secondary">
             Download CSV template
@@ -89,20 +79,6 @@ export default function ImportPage() {
 
       <div className="mt-8 grid max-w-2xl gap-6">
         <FileField label="Student list" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={onFile} />
-        <SelectField
-          label="Also enrol in"
-          optional
-          hint={compulsoryNames ? `Everyone is added to ${compulsoryNames} automatically.` : undefined}
-          value={programmeId}
-          onChange={(e) => setProgrammeId(e.target.value)}
-        >
-          <option value="">Not yet</option>
-          {programmes.filter((p) => !p.is_compulsory).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </SelectField>
         {error ? <Notice tone="error">{error}</Notice> : null}
       </div>
 
@@ -135,10 +111,11 @@ export default function ImportPage() {
                     <>
                       <span className="block font-semibold">{r.full_name || <span className="text-ink-muted">No name</span>}</span>
                       <span className="block text-ui-xs break-all text-ink-muted">{r.email}</span>
+                      {r.phone || r.sex ? <span className="block text-ui-xs text-ink-muted">{[r.phone, r.sex && r.sex.charAt(0).toUpperCase() + r.sex.slice(1).toLowerCase()].filter(Boolean).join(", ")}</span> : null}
                     </>
                   ),
                 },
-                { key: "matric", header: "Matric no.", cell: (r) => <span className="tabular-nums">{r.matric_no}</span> },
+                { key: "matric", header: "Matric or reg. no.", cell: (r) => <span className="tabular-nums">{r.matric_no}</span> },
                 {
                   key: "dept",
                   header: "Department and level",
@@ -165,8 +142,8 @@ export default function ImportPage() {
         <section className="mt-12 max-w-3xl space-y-6" aria-labelledby="result-title">
           <SectionTitle id="result-title">Import finished</SectionTitle>
           <Notice tone="success">
-            Created {result.data.created} student{result.data.created === 1 ? "" : "s"}. They can log in now with their matric number as both login and password.
-            {result.data.enrolled ? ` Enrolled ${result.data.enrolled.added} in the programme.` : ""}
+            Created {result.data.created} student{result.data.created === 1 ? "" : "s"} and added them to every active course. They can log in now with their matric or
+            registration number as both login and password.
           </Notice>
           {notImported.length ? (
             <div>
@@ -180,6 +157,7 @@ export default function ImportPage() {
               </ul>
             </div>
           ) : null}
+          {result.data.enrolled ? null : <Notice tone="error">Some students could not be added to every course. Enrol them from the course page.</Notice>}
           <ButtonLink href="/admin/users/?role=student" variant="secondary">
             Go to students
           </ButtonLink>

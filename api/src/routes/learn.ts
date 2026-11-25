@@ -77,7 +77,7 @@ learnRouter.get("/overview", async (req, res) => {
 
   const now = new Date().toISOString();
   const [{ data: programmes }, { data: next }, { data: assessments }, { data: announcements }] = await Promise.all([
-    admin.from("programmes").select("id, title, description").in("id", ids).order("title"),
+    admin.from("programmes").select("id, title, description").in("id", ids).order("sort_order").order("title"),
     admin.from("classes").select(`${CLASS_COLUMNS}, programme:programmes(title)`).in("programme_id", ids).gte("ends_at", now).order("starts_at").limit(1),
     admin.from("assessments").select(`${ASSESSMENT_COLUMNS}, programme:programmes(title)`).in("programme_id", ids).eq("published", true),
     admin
@@ -104,7 +104,7 @@ learnRouter.get("/programmes/:id", async (req, res) => {
   const id = idParam(req.params.id, res);
   if (!id || !(await enrolled(req, res, id))) return;
   const [{ data: programme }, { data: classes }, { data: tutors }, { data: assessments }, people] = await Promise.all([
-    admin.from("programmes").select("id, title, description, cover_note").eq("id", id).single(),
+    admin.from("programmes").select("id, title, description, cover_note, outline").eq("id", id).single(),
     admin.from("classes").select(CLASS_COLUMNS).eq("programme_id", id).order("starts_at"),
     admin.from("programme_tutors").select("tutor:tutors!inner(profile:profiles!inner(full_name))").eq("programme_id", id),
     admin.from("assessments").select(ASSESSMENT_COLUMNS).eq("programme_id", id).eq("published", true).order("due_at", { nullsFirst: false }),
@@ -247,7 +247,7 @@ learnRouter.get("/progress", async (req, res) => {
   if (!ids.length) return res.json({ programmes: [] });
   const now = new Date().toISOString();
   const [{ data: programmes }, { data: assessments }, { data: classes }] = await Promise.all([
-    admin.from("programmes").select("id, title").in("id", ids).order("title"),
+    admin.from("programmes").select("id, title").in("id", ids).order("sort_order").order("title"),
     admin.from("assessments").select(ASSESSMENT_COLUMNS).in("programme_id", ids).eq("published", true).order("due_at", { nullsFirst: false }),
     admin.from("classes").select("id, programme_id, ends_at").in("programme_id", ids),
   ]);

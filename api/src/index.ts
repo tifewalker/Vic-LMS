@@ -1,6 +1,7 @@
 import { app } from "./app.js";
 import { env } from "./env.js";
 import { logError } from "./lib/errors.js";
+import { startReminderLoop } from "./lib/reminders.js";
 import { checkSchema } from "./lib/schema-check.js";
 
 // No emails are sent: admins create accounts with passwords and reset them from the Users page.
@@ -8,4 +9,5 @@ import { checkSchema } from "./lib/schema-check.js";
 app.listen(env.PORT, () => {
   console.log(`API listening on http://localhost:${env.PORT}`);
   checkSchema().catch((err) => logError("schema check", err));
+  startReminderLoop();
 });

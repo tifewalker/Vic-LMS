@@ -11,14 +11,29 @@ import { Tabs } from "@/components/ui/Tabs";
 import { formatDateTime } from "@/lib/dates";
 import type { ClassItem } from "@/lib/types";
 import { useLoad } from "@/lib/useLoad";
+import { TIMETABLE_TEXT } from "@/lib/timetable";
 import { ClassList } from "./ClassList";
+import { ClassReminders } from "./ClassReminders";
 
 /* Cross-programme list pages shared by admins, tutors and students. */
 
 type ClassRow = ClassItem & { programme_title: string; live: boolean };
 
 /** Every class across the user's programmes: live and upcoming first, then past. */
-export function ClassesPage({ path, kicker, editable = false }: { path: string; kicker: string; editable?: boolean }) {
+export function ClassesPage({
+  path,
+  kicker,
+  editable = false,
+  timetable = false,
+  reminders = false,
+}: {
+  path: string;
+  kicker: string;
+  editable?: boolean;
+  timetable?: boolean;
+  /** Show the calendar link and push reminder settings. */
+  reminders?: boolean;
+}) {
   const { data, error } = useLoad<{ classes: ClassRow[] }>(path);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [now] = useState(() => Date.now());
@@ -28,8 +43,21 @@ export function ClassesPage({ path, kicker, editable = false }: { path: string; 
 
   return (
     <>
-      <PageHeader kicker={kicker} title="Classes" description="Every class across your programmes. Open one for its live Q&A, materials and discussion." />
+      <PageHeader
+        kicker={kicker}
+        title={timetable ? "Timetable" : "Classes"}
+        description={
+          timetable
+            ? `${TIMETABLE_TEXT} Your lectures for every course are listed here by date. Open one for its live Q&A, materials and discussion.`
+            : "Every class across your courses. Open one for its live Q&A, materials and discussion."
+        }
+      />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
+      {reminders ? (
+        <div className="mt-6">
+          <ClassReminders />
+        </div>
+      ) : null}
       <div className="mt-6">
         <Tabs
           label="Classes"

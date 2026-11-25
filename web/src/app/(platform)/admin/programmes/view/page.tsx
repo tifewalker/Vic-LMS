@@ -7,6 +7,7 @@ import { AssessmentForm } from "@/components/platform/AssessmentForm";
 import { AssessmentTable } from "@/components/platform/AssessmentTable";
 import { ClassForm } from "@/components/platform/ClassForm";
 import { ClassList } from "@/components/platform/ClassList";
+import { CourseOutline } from "@/components/platform/CourseOutline";
 import { Materials } from "@/components/platform/Materials";
 import { PeoplePicker } from "@/components/platform/PeoplePicker";
 import { Button } from "@/components/ui/Button";
@@ -25,13 +26,13 @@ import type { Assessment, ClassItem } from "@/lib/types";
 
 type Person = { id: string; full_name: string; email: string; status: string; matric_no?: string; tutor_id?: string };
 type Detail = {
-  programme: { id: string; title: string; description: string; cover_note: string; is_active: boolean };
+  programme: { id: string; title: string; description: string; cover_note: string; is_active: boolean; outline: string[] };
   students: Person[];
   tutors: Person[];
   classes: ClassItem[];
   assessments: Assessment[];
 };
-type Tab = "classes" | "students" | "tutors" | "assessments" | "announcements" | "materials";
+type Tab = "outline" | "classes" | "students" | "tutors" | "assessments" | "announcements" | "materials";
 
 function ProgrammeView() {
   const id = useSearchParams().get("id") ?? "";
@@ -40,7 +41,7 @@ function ProgrammeView() {
   const [data, setData] = useState<Detail | null>(null);
   const [tab, setTab] = useState<Tab>("classes");
   const [adding, setAdding] = useState(false);
-  const [error, setError] = useState(id ? "" : "No programme was chosen.");
+  const [error, setError] = useState(id ? "" : "No course was chosen.");
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
 
@@ -58,9 +59,9 @@ function ProgrammeView() {
   }, [id, reloadKey]);
 
   async function remove(kind: "students" | "tutors", p: Person) {
-    if (!(await confirm({ title: `Remove ${p.full_name}?`, body: "They will lose access to this programme's classes and materials.", confirmLabel: "Remove" }))) return;
+    if (!(await confirm({ title: `Remove ${p.full_name}?`, body: "They will lose access to this course's classes and materials.", confirmLabel: "Remove" }))) return;
     const res = await api(`/admin/programmes/${id}/${kind}/${p.id}`, { method: "DELETE" });
-    toast(res.ok ? `${p.full_name} removed from this programme.` : res.error, res.ok ? "success" : "error");
+    toast(res.ok ? `${p.full_name} removed from this course.` : res.error, res.ok ? "success" : "error");
     reload();
   }
 
@@ -68,6 +69,7 @@ function ProgrammeView() {
   if (!data) return <SkeletonPage />;
 
   const addLabel: Record<Tab, string | null> = {
+    outline: null,
     classes: "Schedule a class",
     students: "Enrol students",
     tutors: "Assign tutors",
@@ -80,9 +82,9 @@ function ProgrammeView() {
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: "Programmes", href: "/admin/programmes/" }, { label: data.programme.title }]} />
+      <AdminBreadcrumbs items={[{ label: "Courses", href: "/admin/programmes/" }, { label: data.programme.title }]} />
       <PageHeader
-        kicker="Programme"
+        kicker="Course"
         title={data.programme.title}
         description={data.programme.description}
         meta={!data.programme.is_active ? <StatusLabel status="draft" label="Inactive" /> : undefined}
@@ -91,7 +93,7 @@ function ProgrammeView() {
 
       <div className="mt-6">
         <Tabs
-          label="Programme sections"
+          label="Course sections"
           value={tab}
           onChange={(t) => {
             setTab(t);
@@ -99,6 +101,7 @@ function ProgrammeView() {
           }}
           tabs={[
             { id: "classes", label: "Classes", count: data.classes.length },
+            { id: "outline", label: "Outline", count: data.programme.outline.length },
             { id: "students", label: "Students", count: data.students.length },
             { id: "tutors", label: "Tutors", count: data.tutors.length },
             { id: "assessments", label: "Assessments", count: data.assessments.length },
@@ -116,6 +119,7 @@ function ProgrammeView() {
                 <h2 className="mb-6 text-ui-md font-semibold">Schedule a class</h2>
                 <ClassForm
                   programmeId={id}
+                  topics={data.programme.outline}
                   onCancel={() => setAdding(false)}
                   onSaved={() => {
                     setAdding(false);
@@ -126,6 +130,13 @@ function ProgrammeView() {
               </div>
             ) : null}
             <ClassList classes={data.classes} editable emptyText="Classes you schedule will appear here." emptyAction={addButton} />
+          </>
+        ) : null}
+
+        {tab === "outline" ? (
+          <>
+            <p className="max-w-measure text-ui-sm text-ink-muted">The topics this course covers, in teaching order. Edit them on the Courses page. Choose a topic when you schedule a class.</p>
+            <CourseOutline outline={data.programme.outline} classes={data.classes} />
           </>
         ) : null}
 
@@ -150,7 +161,7 @@ function ProgrammeView() {
               empty={
                 <EmptyState
                   title={tab === "students" ? "No students enrolled yet." : "No tutors assigned yet."}
-                  text={tab === "students" ? "Enrol students so they can see classes and materials." : "Assign a tutor to teach this programme."}
+                  text={tab === "students" ? "Enrol students so they can see classes and materials." : "Assign a tutor to teach this course."}
                   action={adding ? undefined : addButton}
                 />
               }

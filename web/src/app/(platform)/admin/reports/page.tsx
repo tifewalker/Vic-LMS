@@ -29,19 +29,19 @@ export default function ReportsPage() {
   const { data, error } = useLoad<{ programmes: Row[] }>("/admin/reports");
   return (
     <>
-      <PageHeader kicker="Reports" title="Reports" description="Each programme at a glance: people, classes held, assessments and grading." />
+      <PageHeader kicker="Reports" title="Reports" description="Each course at a glance: people, classes held, assessments and grading." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       <div className="mt-6">
         <DataTable
-          caption="Programme report"
+          caption="Course report"
           rows={data?.programmes ?? null}
           rowKey={(r) => r.id}
           onRowClick={(r) => router.push(`/admin/programmes/view/?id=${r.id}`)}
-          empty={<EmptyState title="No programmes yet." />}
+          empty={<EmptyState title="No courses yet." />}
           columns={[
             {
               key: "title",
-              header: "Programme",
+              header: "Course",
               primary: true,
               cell: (r) => (
                 <>

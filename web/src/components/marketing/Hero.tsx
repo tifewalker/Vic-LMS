@@ -10,6 +10,7 @@ export function Hero() {
     <section aria-labelledby="hero-title" className="pt-10 pb-section md:pt-16 lg:pt-20">
       <div className="container-site">
         <p className="kicker max-w-[52ch] leading-relaxed">{hero.eyebrow}</p>
+        <p className="mt-2 text-[0.9375rem] text-ink-muted">{hero.partnershipLine}</p>
 
         <div className="mt-6 grid gap-y-10 md:mt-8 lg:grid-cols-12 lg:items-end lg:gap-x-8">
           <h1

@@ -8,6 +8,7 @@ import { authRouter, meHandler } from "./routes/auth.js";
 import { learnRouter } from "./routes/learn.js";
 import { moderationRouter } from "./routes/moderation.js";
 import { programmesRouter } from "./routes/programmes.js";
+import { remindersRouter } from "./routes/reminders.js";
 import { teachRouter } from "./routes/teach.js";
 
 export const app = express();
@@ -25,6 +26,7 @@ app.use("/admin", programmesRouter);
 app.use("/admin", moderationRouter);
 app.use("/tutor", teachRouter);
 app.use("/student", learnRouter);
+app.use(remindersRouter); // /calendar/<token>.ics, /me/calendar, /push/key, /me/push
 
 app.use((_req, res) => res.status(404).json({ error: "Not found." }));
 

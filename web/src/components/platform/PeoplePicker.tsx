@@ -76,7 +76,7 @@ export function PeoplePicker({
         }}
       >
         <label className="block min-w-0 flex-1 basis-60">
-          <span className="block text-ui-sm font-semibold">{type === "students" ? "Search students not yet in this programme" : "Search tutors not yet in this programme"}</span>
+          <span className="block text-ui-sm font-semibold">{type === "students" ? "Search students not yet in this course" : "Search tutors not yet in this course"}</span>
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, email or ID" className={cx(controlClass, "mt-2 h-11")} />
         </label>
         <Button type="submit" variant="secondary">

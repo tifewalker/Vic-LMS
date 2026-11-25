@@ -39,6 +39,7 @@ export function ClassList({
               <a href={`/class/?id=${c.id}`} className="font-semibold text-ink hover:text-accent-strong hover:underline">
                 {c.title}
               </a>
+              {c.topic ? <span className="block text-ui-xs font-semibold text-ink-muted">{c.topic}</span> : null}
               <span className="block text-ui-xs text-ink-muted">
                 {formatClassTime(c.starts_at, c.ends_at)}
                 {showProgramme && c.programme ? ` · ${c.programme.title}` : ""}

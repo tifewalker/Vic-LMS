@@ -38,7 +38,7 @@ export function idParam(raw: unknown, res: Response, what = "Not found."): strin
 export const zodMessage = (e: z.ZodError) => e.issues.map((i) => i.message).join(" ");
 
 /** Columns of `classes` that are safe for everyone. Zoom details live in class_tutor_links. */
-export const CLASS_COLUMNS = "id, programme_id, title, description, starts_at, ends_at, youtube_url, youtube_id, recording_url, recording_id, live_mode, status, created_at";
+export const CLASS_COLUMNS = "id, programme_id, title, description, starts_at, ends_at, youtube_url, youtube_id, recording_url, recording_id, live_mode, status, topic, created_at";
 
 export const ASSESSMENT_COLUMNS =
   "id, programme_id, class_id, title, instructions, attachment_path, due_at, max_score, mode, published, created_at";

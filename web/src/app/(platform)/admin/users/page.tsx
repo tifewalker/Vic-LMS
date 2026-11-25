@@ -26,6 +26,8 @@ type User = {
   matric_no: string | null;
   department: string | null;
   level: number | null;
+  phone: string | null;
+  sex: string | null;
   tutor_id: string | null;
 };
 type ListResponse = { users: User[]; total: number; page: number; pageSize: number };
@@ -73,14 +75,14 @@ export default function UsersPage() {
   async function resetToMatric(u: User) {
     const ok = await confirm({
       title: `Reset ${u.full_name}'s password?`,
-      body: `Their password goes back to their matric number, ${u.matric_no}. Anyone signed in on their account stays signed in until their session ends.`,
+      body: `Their password goes back to their matric or registration number, ${u.matric_no}. Anyone signed in on their account stays signed in until their session ends.`,
       confirmLabel: "Reset password",
     });
     if (!ok) return;
     setBusy(u.id);
     const res = await api<{ id: string }>(`/admin/users/${u.id}/password`, { body: {} });
     setBusy(null);
-    toast(res.ok ? `${u.full_name}'s password is their matric number again.` : res.error, res.ok ? "success" : "error");
+    toast(res.ok ? `${u.full_name}'s password is their matric or registration number again.` : res.error, res.ok ? "success" : "error");
   }
 
   async function setSuspended(u: User, suspend: boolean) {
@@ -148,7 +150,7 @@ export default function UsersPage() {
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={role === "student" ? "Name, email or matric number" : role === "tutor" ? "Name, email or tutor ID" : "Name or email"}
+            placeholder={role === "student" ? "Name, email, matric or reg. number" : role === "tutor" ? "Name, email or tutor ID" : "Name or email"}
             className={cx(controlClass, "mt-2 h-11")}
           />
         </label>
@@ -195,11 +197,22 @@ export default function UsersPage() {
                 <>
                   <span className="block font-semibold">{u.full_name}</span>
                   <span className="block text-ui-xs break-all text-ink-muted">{u.email}</span>
+                  {u.phone || u.sex ? (
+                    <span className="block text-ui-xs text-ink-muted">
+                      {u.phone ? (
+                        <a href={`tel:${u.phone}`} className="tabular-nums hover:text-accent-strong hover:underline">
+                          {u.phone}
+                        </a>
+                      ) : null}
+                      {u.phone && u.sex ? ", " : null}
+                      {u.sex === "female" ? "Female" : u.sex === "male" ? "Male" : null}
+                    </span>
+                  ) : null}
                 </>
               ),
             },
             ...(role !== "admin"
-              ? [{ key: "id", header: role === "student" ? "Matric no." : "Tutor ID", cell: (u: User) => <span className="tabular-nums">{u.matric_no ?? u.tutor_id}</span> }]
+              ? [{ key: "id", header: role === "student" ? "Matric or reg. no." : "Tutor ID", cell: (u: User) => <span className="tabular-nums">{u.matric_no ?? u.tutor_id}</span> }]
               : []),
             ...(role === "student"
               ? [

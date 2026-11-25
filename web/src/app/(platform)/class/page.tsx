@@ -260,8 +260,8 @@ function LiveClass({ data, reload }: { data: Data; reload: () => void }) {
           {isAdmin ? (
             <AdminBreadcrumbs
               items={[
-                { label: "Programmes", href: "/admin/programmes/" },
-                { label: c.programme?.title ?? "Programme", href: `/admin/programmes/view/?id=${c.programme_id}` },
+                { label: "Courses", href: "/admin/programmes/" },
+                { label: c.programme?.title ?? "Course", href: `/admin/programmes/view/?id=${c.programme_id}` },
                 { label: c.title },
               ]}
             />
@@ -514,7 +514,7 @@ function ClassPage() {
     if (!id) return;
     api<Data>(`${base}/classes/${encodeURIComponent(id)}`).then((res) => {
       if (res.ok) setData(res.data);
-      else setError(res.error === "Not found." ? "This class is not part of your programmes." : res.error);
+      else setError(res.error === "Not found." ? "This class is not part of your courses." : res.error);
     });
   }, [base, id, reloadKey]);
 

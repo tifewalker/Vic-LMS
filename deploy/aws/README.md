@@ -56,7 +56,13 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 EMAIL_PROVIDER=console
+API_PUBLIC_URL=https://api.crystalinnovationhub.com.ng
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=https://crystalinnovationhub.com.ng
 ```
+
+The two `VAPID_` keys turn on class reminders by push notification (without them the API runs, with reminders off). Copy the pair from `api/.env`, or make a new pair with `npx web-push generate-vapid-keys`. Keep the same pair for good: a new pair means every student has to turn reminders on again. The API checks every minute and sends each class's reminder about an hour before it starts, which is one more reason to run a single copy.
 
 `WEB_URL` lists every address the website is opened from (comma separated, no trailing slash). Add the `.onrender.com` address too while it is still in use. A missing one shows as a CORS error in the browser.
 

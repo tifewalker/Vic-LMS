@@ -18,13 +18,18 @@ type Programme = {
   description: string;
   cover_note: string;
   is_active: boolean;
-  is_compulsory: boolean;
+  sort_order: number;
+  outline: string[];
   student_count: number;
   tutor_count: number;
   class_count: number;
 };
-type Draft = { id?: string; title: string; description: string; cover_note: string; is_active: boolean; is_compulsory: boolean };
-const blank: Draft = { title: "", description: "", cover_note: "", is_active: true, is_compulsory: false };
+/** outline is edited as text, one topic per line. */
+type Draft = { id?: string; title: string; description: string; cover_note: string; is_active: boolean; sort_order: number; outline: string };
+const blank: Draft = { title: "", description: "", cover_note: "", is_active: true, sort_order: 100, outline: "" };
+const outlineLines = (text: string) => text.split("\n").map((t) => t.trim().replace(/\s+/g, " ")).filter(Boolean);
+/** sort_order 0 marks the main course (Entrepreneurship), listed first everywhere. */
+const MAIN = 0;
 
 export default function ProgrammesPage() {
   const toast = useToast();
@@ -44,11 +49,12 @@ export default function ProgrammesPage() {
     if (!draft) return;
     setBusy(true);
     setError("");
-    const { id, ...body } = draft;
+    const { id, outline, ...rest } = draft;
+    const body = { ...rest, outline: outlineLines(outline) };
     const res = id ? await api(`/admin/programmes/${id}`, { method: "PATCH", body }) : await api("/admin/programmes", { body });
     setBusy(false);
     if (!res.ok) return setError(res.error);
-    toast(id ? "Programme saved." : "Programme created.");
+    toast(id ? "Course saved." : "Course created.");
     setDraft(null);
     setReloadKey((k) => k + 1);
   }
@@ -57,35 +63,43 @@ export default function ProgrammesPage() {
     <>
       <PageHeader
         kicker="Teaching"
-        title="Programmes"
-        description="Each programme is one course. Students and tutors are enrolled per programme."
-        actions={!draft ? <Button onClick={() => setDraft(blank)}>New programme</Button> : null}
+        title="Courses"
+        description="Entrepreneurship and Innovation is the course, and the training areas are the topics in its outline. Every student takes every active course and is enrolled automatically when they register or are imported. Tutors are assigned per course."
+        actions={!draft ? <Button onClick={() => setDraft(blank)}>New course</Button> : null}
       />
 
       {draft ? (
         <form onSubmit={save} className="mt-8 max-w-2xl space-y-6 border border-line bg-paper p-6" noValidate>
-          <h2 className="text-ui-md font-semibold">{draft.id ? "Edit programme" : "New programme"}</h2>
+          <h2 className="text-ui-md font-semibold">{draft.id ? "Edit course" : "New course"}</h2>
           <TextField label="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} required />
           <TextArea label="Description" optional rows={3} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
           <TextArea
             label="What you will gain"
             optional
-            hint="A short note shown to students on the programme page."
+            hint="A short note shown to students on the course page."
             rows={3}
             value={draft.cover_note}
             onChange={(e) => setDraft({ ...draft, cover_note: e.target.value })}
           />
-          <CheckboxField label="Active" hint="Inactive programmes are hidden from the import list and the registration form." checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
+          <TextArea
+            label="Course outline"
+            optional
+            hint="One topic per line, in teaching order. Students see it on the course page, and each class can name its topic."
+            rows={9}
+            value={draft.outline}
+            onChange={(e) => setDraft({ ...draft, outline: e.target.value })}
+          />
+          <CheckboxField label="Active" hint="Inactive courses are hidden from the registration form, and new students are not enrolled in them." checked={draft.is_active} onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })} />
           <CheckboxField
-            label="Compulsory for every student"
-            hint="New students are enrolled automatically, whether they register themselves or are imported. Students already registered are not changed."
-            checked={draft.is_compulsory}
-            onChange={(e) => setDraft({ ...draft, is_compulsory: e.target.checked })}
+            label="Main course"
+            hint="Listed first for students and tutors. Entrepreneurship is the main course; the others follow in title order."
+            checked={draft.sort_order === MAIN}
+            onChange={(e) => setDraft({ ...draft, sort_order: e.target.checked ? MAIN : 100 })}
           />
           {error ? <Notice tone="error">{error}</Notice> : null}
           <div className="flex flex-wrap gap-3">
             <Button type="submit" loading={busy} loadingText="Saving…" disabled={!draft.title.trim()}>
-              Save programme
+              Save course
             </Button>
             <Button variant="secondary" onClick={() => setDraft(null)}>
               Cancel
@@ -98,15 +112,15 @@ export default function ProgrammesPage() {
 
       <div className="mt-8">
         <DataTable
-          caption="Programmes"
+          caption="Courses"
           rows={programmes}
           rowKey={(p) => p.id}
           onRowClick={(p) => router.push(`/admin/programmes/view/?id=${p.id}`)}
-          empty={<EmptyState title="No programmes yet." text="Create a programme to start scheduling classes." action={<Button onClick={() => setDraft(blank)}>New programme</Button>} />}
+          empty={<EmptyState title="No courses yet." text="Create a course to start scheduling classes." action={<Button onClick={() => setDraft(blank)}>New course</Button>} />}
           columns={[
             {
               key: "title",
-              header: "Programme",
+              header: "Course",
               primary: true,
               cell: (p) => (
                 <>
@@ -114,6 +128,7 @@ export default function ProgrammesPage() {
                     {p.title}
                   </a>
                   <span className="block max-w-measure text-ui-xs text-ink-muted">{p.description}</span>
+                  {p.outline.length ? <span className="block text-ui-xs text-ink-muted">{p.outline.length} topics in the outline</span> : null}
                 </>
               ),
             },
@@ -123,7 +138,7 @@ export default function ProgrammesPage() {
               cell: (p) => (
                 <span className="flex flex-wrap gap-2">
                   <StatusLabel status={p.is_active ? "active" : "draft"} label={p.is_active ? "Active" : "Inactive"} />
-                  {p.is_compulsory ? <StatusLabel status="pinned" label="Compulsory" /> : null}
+                  {p.sort_order === MAIN ? <StatusLabel status="pinned" label="Main course" /> : null}
                 </span>
               ),
             },
@@ -136,7 +151,7 @@ export default function ProgrammesPage() {
               hiddenHeader: true,
               className: "w-16 md:text-right",
               cell: (p) => (
-                <Button variant="quiet" onClick={() => setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active, is_compulsory: p.is_compulsory })}>
+                <Button variant="quiet" onClick={() => setDraft({ id: p.id, title: p.title, description: p.description, cover_note: p.cover_note, is_active: p.is_active, sort_order: p.sort_order, outline: p.outline.join("\n") })}>
                   Edit
                 </Button>
               ),

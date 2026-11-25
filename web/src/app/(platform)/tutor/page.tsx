@@ -29,14 +29,14 @@ export default function TutorDashboard() {
 
   return (
     <>
-      <PageHeader kicker={me.tutor_id ? `Tutor · ${me.tutor_id}` : "Teaching"} title={`Welcome, ${me.full_name.split(" ")[0]}`} description="Your programmes and the classes coming up." />
+      <PageHeader kicker={me.tutor_id ? `Tutor · ${me.tutor_id}` : "Teaching"} title={`Welcome, ${me.full_name.split(" ")[0]}`} description="Your courses and the classes coming up." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
 
       <div className="mt-8">
         <Stats
           label="Teaching"
           items={[
-            { label: "My programmes", value: data?.programmes.length ?? null },
+            { label: "My courses", value: data?.programmes.length ?? null },
             { label: "Students", value: students ?? null },
             { label: "Upcoming classes", value: data?.upcoming.length ?? null },
           ]}
@@ -51,18 +51,18 @@ export default function TutorDashboard() {
       </section>
 
       <section className="mt-12" aria-labelledby="programmes-title">
-        <SectionTitle id="programmes-title">My programmes</SectionTitle>
+        <SectionTitle id="programmes-title">My courses</SectionTitle>
         <div className="mt-4">
           <DataTable
-            caption="My programmes"
+            caption="My courses"
             rows={data?.programmes ?? null}
             rowKey={(p) => p.id}
             onRowClick={(p) => router.push(`/tutor/programme/?id=${p.id}`)}
-            empty={<EmptyState title="No programmes yet." text="The programme admin will assign you to a programme." />}
+            empty={<EmptyState title="No courses yet." text="The programme admin will assign you to a course." />}
             columns={[
               {
                 key: "title",
-                header: "Programme",
+                header: "Course",
                 primary: true,
                 cell: (p) => (
                   <>

@@ -100,7 +100,7 @@ export default function LiveMonitorPage() {
 
   return (
     <>
-      <PageHeader kicker="Live and community" title="Live monitor" description="Live Q&A from every programme as it happens. Hide, answer, reply or mute without leaving this page." />
+      <PageHeader kicker="Live and community" title="Live monitor" description="Live Q&A from every course as it happens. Hide, answer, reply or mute without leaving this page." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
 
       <div className="mt-8 grid gap-8 md:grid-cols-2">
@@ -116,7 +116,7 @@ export default function LiveMonitorPage() {
 
       <div className="mt-10 flex flex-wrap items-end gap-x-6 gap-y-4 border-y border-line py-4">
         <SelectField
-          label="Programme"
+          label="Course"
           value={programme}
           onChange={(e) => {
             setProgramme(e.target.value);
@@ -124,7 +124,7 @@ export default function LiveMonitorPage() {
           }}
           className="w-full sm:w-64"
         >
-          <option value="">All programmes</option>
+          <option value="">All courses</option>
           {data?.programmes.map((p) => (
             <option key={p.id} value={p.id}>
               {p.title}
@@ -157,7 +157,7 @@ export default function LiveMonitorPage() {
             </div>
           ) : data.messages.length === 0 ? (
             <div className="mt-4">
-              <EmptyState title="No messages." text="Messages from live Q&A in every programme appear here." />
+              <EmptyState title="No messages." text="Messages from live Q&A in every course appear here." />
             </div>
           ) : (
             <ol ref={listRef} aria-live="polite" className="mt-4 max-h-[44rem] overflow-y-auto border-y border-line">

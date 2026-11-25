@@ -10,14 +10,14 @@ import type { Assessment, ClassItem } from "@/lib/types";
 /** Assessments for a programme; each row opens the submissions and grading page. */
 export function AssessmentTable({ items, classes, emptyAction }: { items: Assessment[] | null; classes: ClassItem[]; emptyAction?: React.ReactNode }) {
   const router = useRouter();
-  const classTitle = (cid: string | null) => (cid ? (classes.find((c) => c.id === cid)?.title ?? "A class") : "Whole programme");
+  const classTitle = (cid: string | null) => (cid ? (classes.find((c) => c.id === cid)?.title ?? "A class") : "Whole course");
   return (
     <DataTable
       caption="Assessments"
       rows={items}
       rowKey={(a) => a.id}
       onRowClick={(a) => router.push(`/tutor/assessment/?id=${a.id}`)}
-      empty={<EmptyState title="No assessments yet." text="Create one for a class or for the whole programme." action={emptyAction} />}
+      empty={<EmptyState title="No assessments yet." text="Create one for a class or for the whole course." action={emptyAction} />}
       columns={[
         {
           key: "title",

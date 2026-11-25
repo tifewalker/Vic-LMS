@@ -97,14 +97,14 @@ export function ThreadsBrowser({ admin }: { admin: boolean }) {
       <PageHeader
         kicker={admin ? "Live and community" : "Teaching"}
         title="Discussions"
-        description={admin ? "Every thread across the programmes. Hidden threads stay visible to admins only." : "Threads from all of your programmes, newest first."}
+        description={admin ? "Every thread across the courses. Hidden threads stay visible to admins only." : "Threads from all of your courses, newest first."}
       />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <Tabs label="Filter threads" value={filter} onChange={setFilter} tabs={filters} />
         {admin ? (
-          <SelectField label="Programme" value={programme} onChange={(e) => setProgramme(e.target.value)} className="w-full sm:w-64">
-            <option value="">All programmes</option>
+          <SelectField label="Course" value={programme} onChange={(e) => setProgramme(e.target.value)} className="w-full sm:w-64">
+            <option value="">All courses</option>
             {data?.programmes?.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}
@@ -118,7 +118,7 @@ export function ThreadsBrowser({ admin }: { admin: boolean }) {
         {!data ? (
           <SkeletonRows rows={4} />
         ) : data.threads.length === 0 ? (
-          <EmptyState title={filter === "all" ? "No threads yet." : "Nothing matches this filter."} text="Questions and discussions from the programmes appear here." />
+          <EmptyState title={filter === "all" ? "No threads yet." : "Nothing matches this filter."} text="Questions and discussions from the courses appear here." />
         ) : (
           <ul className="border-t border-line">
             {data.threads.map((t) => (

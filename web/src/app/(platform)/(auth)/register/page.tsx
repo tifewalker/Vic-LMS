@@ -7,49 +7,53 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
 import { api } from "@/lib/api";
 import { site } from "@/lib/site";
+import { TIMETABLE_TEXT } from "@/lib/timetable";
 
-type Programme = { id: string; title: string; is_compulsory: boolean };
+type Course = { id: string; title: string; outline: string[] };
 type Registered = { full_name: string; email: string; matric_no: string; enrolled: boolean };
+type Form = { full_name: string; email: string; phone: string; sex: string; matric_no: string; department: string; level: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const cleanMatric = (m: string) => m.trim().toUpperCase().replace(/\s+/g, "");
+const cleanPhone = (p: string) => p.trim().replace(/[\s().-]/g, "");
 
 const LEVELS = ["100", "200", "300", "400", "500"];
+const blank: Form = { full_name: "", email: "", phone: "", sex: "", matric_no: "", department: "", level: "" };
 
 /** Field errors, checked in the browser first. The API checks everything again. */
-function check(name: string, email: string, matric: string, department: string, level: string, picked: string) {
-  const errors: Record<string, string> = {};
-  if (!name.trim()) errors.full_name = "Enter your full name.";
-  if (!email.trim()) errors.email = "Enter your email address.";
-  else if (!EMAIL.test(email.trim())) errors.email = "Enter a valid email address, like name@example.com.";
-  const m = cleanMatric(matric);
-  if (!m) errors.matric_no = "Enter your matric number.";
-  else if (m.length < 6) errors.matric_no = "Matric number must be at least 6 characters.";
+function check(f: Form) {
+  const errors: Partial<Record<keyof Form, string>> = {};
+  if (!f.full_name.trim()) errors.full_name = "Enter your full name.";
+  if (!f.email.trim()) errors.email = "Enter your email address.";
+  else if (!EMAIL.test(f.email.trim())) errors.email = "Enter a valid email address, like name@example.com.";
+  const phone = cleanPhone(f.phone);
+  if (!phone) errors.phone = "Enter your phone number.";
+  else if (!/^\+?[0-9]{7,15}$/.test(phone)) errors.phone = "Enter a valid phone number, like 0803 123 4567.";
+  if (!f.sex) errors.sex = "Choose your sex.";
+  const m = cleanMatric(f.matric_no);
+  if (!m) errors.matric_no = "Enter your matric number, or your registration number if you are in 100 Level.";
+  else if (m.length < 6) errors.matric_no = "This number must be at least 6 characters.";
   else if (!/^[A-Z0-9/.-]+$/.test(m)) errors.matric_no = "Use only letters, numbers and the characters / - .";
-  if (!department.trim()) errors.department = "Enter your department.";
-  else if (department.trim().length > 120) errors.department = "Department must be 120 characters or fewer.";
-  if (!level) errors.level = "Choose your level.";
-  if (!picked) errors.programmes = "Choose your programme.";
+  if (!f.department.trim()) errors.department = "Enter your department.";
+  else if (f.department.trim().length > 120) errors.department = "Department must be 120 characters or fewer.";
+  if (!f.level) errors.level = "Choose your level.";
   return errors;
 }
 
 export default function RegisterPage() {
-  const [programmes, setProgrammes] = useState<Programme[] | null>(null);
+  const [courses, setCourses] = useState<Course[] | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [matric, setMatric] = useState("");
-  const [department, setDepartment] = useState("");
-  const [level, setLevel] = useState("");
-  const [picked, setPicked] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Form>(blank);
+  const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Registered | null>(null);
   const doneRef = useRef<HTMLDivElement>(null);
 
+  const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
+
   useEffect(() => {
-    api<{ programmes: Programme[] }>("/auth/programmes").then((res) => (res.ok ? setProgrammes(res.data.programmes) : setLoadError(res.error)));
+    api<{ programmes: Course[] }>("/auth/programmes").then((res) => (res.ok ? setCourses(res.data.programmes) : setLoadError(res.error)));
   }, []);
 
   useEffect(() => {
@@ -58,22 +62,17 @@ export default function RegisterPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const found = check(name, email, matric, department, level, picked);
+    const found = check(form);
     setErrors(found);
     setError("");
     if (Object.keys(found).length) return;
     setBusy(true);
-    const res = await api<Registered>("/auth/register", {
-      body: { full_name: name, email, matric_no: matric, department, level: Number(level), programme_id: picked },
-    });
+    const res = await api<Registered>("/auth/register", { body: { ...form, level: Number(form.level) } });
     setBusy(false);
     if (!res.ok) return setError(res.error);
     setDone(res.data);
     window.scrollTo({ top: 0 });
   }
-
-  const compulsory = programmes?.filter((p) => p.is_compulsory) ?? [];
-  const electives = programmes?.filter((p) => !p.is_compulsory) ?? [];
 
   if (done) {
     return (
@@ -84,19 +83,20 @@ export default function RegisterPage() {
           <p className="font-semibold">Log in with:</p>
           <dl className="mt-3 space-y-3">
             <div>
-              <dt className="text-ui-xs text-ink-muted">Email (or your matric number)</dt>
+              <dt className="text-ui-xs text-ink-muted">Email (or your matric or registration number)</dt>
               <dd className="font-semibold break-all">{done.email}</dd>
             </div>
             <div>
-              <dt className="text-ui-xs text-ink-muted">Password: your matric number</dt>
+              <dt className="text-ui-xs text-ink-muted">Password: your matric or registration number</dt>
               <dd className="font-semibold break-all">{done.matric_no}</dd>
             </div>
           </dl>
         </div>
         {done.enrolled ? null : (
-          <Notice className="mt-6">Your account is ready, but we could not add you to every programme. The programme team will add you.</Notice>
+          <Notice className="mt-6">Your account is ready, but we could not add you to every course. The programme team will add you.</Notice>
         )}
         <p className="mt-6 text-ink-muted">Keep these details. We do not send emails, so this is the only place they are shown.</p>
+        <p className="mt-3 text-ink-muted">{TIMETABLE_TEXT} After you log in, your timetable shows every lecture.</p>
         <ButtonLink href={site.platform.login} className="mt-8">
           Go to log in
         </ButtonLink>
@@ -108,22 +108,62 @@ export default function RegisterPage() {
     <>
       <p className="ui-label">Training platform</p>
       <h1 className="mt-1 font-serif text-ui-xl">Student registration</h1>
-      <p className="mt-2 text-ink-muted">Fill in your details. You can log in as soon as you finish, using your email and your matric number as the password.</p>
+      <p className="mt-2 text-ink-muted">
+        Fill in your details. You can log in as soon as you finish, using your email and your matric or registration number as the password.
+      </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
-        <TextField label="Full name" name="full_name" autoComplete="name" required value={name} error={errors.full_name} onChange={(e) => setName(e.target.value)} />
-        <TextField label="Email" name="email" type="email" autoComplete="email" inputMode="email" required value={email} error={errors.email} onChange={(e) => setEmail(e.target.value)} />
+        <TextField label="Full name" name="full_name" autoComplete="name" required value={form.full_name} error={errors.full_name} onChange={set("full_name")} />
+        <TextField label="Email" name="email" type="email" autoComplete="email" inputMode="email" required value={form.email} error={errors.email} onChange={set("email")} />
         <TextField
-          label="Matric number"
+          label="Phone number"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="0803 123 4567"
+          required
+          value={form.phone}
+          error={errors.phone}
+          onChange={set("phone")}
+        />
+        <fieldset aria-describedby={errors.sex ? "sex-error" : undefined}>
+          <legend className="text-ui-sm font-semibold">Sex</legend>
+          <div className="mt-3 flex flex-wrap gap-6">
+            {[
+              ["female", "Female"],
+              ["male", "Male"],
+            ].map(([value, label]) => (
+              <label key={value} className="flex cursor-pointer items-center gap-3 text-ui-sm">
+                <input
+                  type="radio"
+                  name="sex"
+                  value={value}
+                  checked={form.sex === value}
+                  onChange={set("sex")}
+                  className="size-5 shrink-0 cursor-pointer accent-[var(--accent)]"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          {errors.sex ? (
+            <p id="sex-error" className="mt-2 text-ui-xs font-semibold text-accent-strong">
+              {errors.sex}
+            </p>
+          ) : null}
+        </fieldset>
+        <TextField
+          label="Matric or registration number"
           name="matric_no"
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          hint="This will also be your password."
+          hint="Use your matric number. If you are in 100 Level and have none yet, use your registration number. This will also be your password."
           required
-          value={matric}
+          value={form.matric_no}
           error={errors.matric_no}
-          onChange={(e) => setMatric(e.target.value)}
+          onChange={set("matric_no")}
         />
         <TextField
           label="Department"
@@ -131,11 +171,11 @@ export default function RegisterPage() {
           autoComplete="off"
           hint="For example, Computer Science."
           required
-          value={department}
+          value={form.department}
           error={errors.department}
-          onChange={(e) => setDepartment(e.target.value)}
+          onChange={set("department")}
         />
-        <SelectField label="Level" name="level" required value={level} error={errors.level} onChange={(e) => setLevel(e.target.value)}>
+        <SelectField label="Level" name="level" required value={form.level} error={errors.level} onChange={set("level")}>
           <option value="">Choose your level</option>
           {LEVELS.map((l) => (
             <option key={l} value={l}>
@@ -143,53 +183,40 @@ export default function RegisterPage() {
             </option>
           ))}
         </SelectField>
-        <fieldset aria-describedby={errors.programmes ? "programmes-error" : undefined}>
-          <legend className="text-ui-sm font-semibold">Programme</legend>
+        <section aria-labelledby="courses-title">
+          <h2 id="courses-title" className="text-ui-sm font-semibold">
+            {courses?.length === 1 ? "Your course" : "Your courses"}
+          </h2>
           {loadError ? (
             <Notice tone="error" className="mt-3">
               {loadError}
             </Notice>
-          ) : !programmes ? (
-            <p className="mt-3 text-ui-sm text-ink-muted">Loading programmes…</p>
+          ) : !courses ? (
+            <p className="mt-3 text-ui-sm text-ink-muted">Loading courses…</p>
           ) : (
-            <>
-              {compulsory.length ? (
-                <div className="mt-2 border-l-2 border-sage bg-paper-2/60 px-4 py-3">
-                  <p className="text-ui-xs text-ink-muted">Included for everyone</p>
-                  <ul className="mt-1 space-y-1">
-                    {compulsory.map((p) => (
-                      <li key={p.id} className="text-ui-sm font-semibold">
-                        {p.title}
-                      </li>
-                    ))}
-                  </ul>
+            <div className="mt-2 border-l-2 border-sage bg-paper-2/60 px-4 py-3">
+              <p className="text-ui-xs text-ink-muted">
+                {courses.length === 1 ? "Every participant takes this course" : "Every participant takes all of these courses"}. You are added when you register.
+              </p>
+              {courses.map((c) => (
+                <div key={c.id} className="mt-3">
+                  <p className="font-semibold">{c.title}</p>
+                  {c.outline.length ? (
+                    <>
+                      <p className="mt-2 text-ui-xs text-ink-muted">Course outline</p>
+                      <ol className="mt-1 list-decimal space-y-1 pl-5 text-ui-sm">
+                        {c.outline.map((t) => (
+                          <li key={t}>{t}</li>
+                        ))}
+                      </ol>
+                    </>
+                  ) : null}
                 </div>
-              ) : null}
-              <p className="mt-4 text-ui-xs text-ink-muted">{compulsory.length ? "Choose one more programme." : "Choose your programme."}</p>
-              <div className="mt-3 space-y-3">
-                {electives.map((p) => (
-                  <label key={p.id} className="flex cursor-pointer items-start gap-3 text-ui-sm">
-                    <input
-                      type="radio"
-                      name="programme"
-                      value={p.id}
-                      checked={picked === p.id}
-                      onChange={() => setPicked(p.id)}
-                      className="mt-0.5 size-5 shrink-0 cursor-pointer accent-[var(--accent)]"
-                    />
-                    {p.title}
-                  </label>
-                ))}
-              </div>
-            </>
+              ))}
+            </div>
           )}
-          {errors.programmes ? (
-            <p id="programmes-error" className="mt-2 text-ui-xs font-semibold text-accent-strong">
-              {errors.programmes}
-            </p>
-          ) : null}
-        </fieldset>
-        <Button type="submit" loading={busy} loadingText="Registering…" disabled={!programmes}>
+        </section>
+        <Button type="submit" loading={busy} loadingText="Registering…">
           Register
         </Button>
       </form>

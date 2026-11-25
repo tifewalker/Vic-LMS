@@ -27,7 +27,7 @@ export default function ProgressPage() {
 
   return (
     <>
-      <PageHeader kicker="Learning" title="My progress" description="How far each programme has come, what you have handed in, and the grades your tutors have released." />
+      <PageHeader kicker="Learning" title="My progress" description="How far each course has come, what you have handed in, and the grades your tutors have released." />
       {error ? <Notice tone="error" className="mt-6">{error}</Notice> : null}
       {!data ? (
         <div className="mt-8">
@@ -35,7 +35,7 @@ export default function ProgressPage() {
         </div>
       ) : data.programmes.length === 0 ? (
         <div className="mt-8">
-          <EmptyState title="You are not in a programme yet." text="Your programmes appear here once the programme admin adds you." />
+          <EmptyState title="You are not in a course yet." text="Your courses appear here once the programme admin adds you." />
         </div>
       ) : (
         data.programmes.map((p) => {

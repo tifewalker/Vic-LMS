@@ -35,10 +35,10 @@ export default function LoginPage() {
     <>
       <p className="ui-label">Training platform</p>
       <h1 className="mt-1 font-serif text-ui-xl">Sign in</h1>
-      <p className="mt-2 text-ink-muted">Students use their email or matric number, with their matric number as the password. Tutors use their tutor ID or email.</p>
+      <p className="mt-2 text-ink-muted">Students use their email or their matric or registration number, with that number as the password. Tutors use their tutor ID or email.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-6" noValidate>
         {error ? <Notice tone="error">{error}</Notice> : null}
-        <TextField label="Email, matric number or tutor ID" name="identifier" autoComplete="username" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
+        <TextField label="Email, matric or registration number, or tutor ID" name="identifier" autoComplete="username" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
         <PasswordField label="Password" name="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         <Button type="submit" loading={busy} loadingText="Signing in…" disabled={!identifier || !password}>
           Sign in

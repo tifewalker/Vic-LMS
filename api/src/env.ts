@@ -38,6 +38,16 @@ const schema = z
       .optional()
       .transform((v) => v?.trim() || undefined)
       .refine((v) => v === undefined || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))), "must be a date like 2026-11-20"),
+
+    // Class reminders by browser push. Without the two keys, reminders are off and the rest works.
+    // Make a pair with: npx web-push generate-vapid-keys. Never change them casually: every
+    // device that turned reminders on would have to turn them on again.
+    VAPID_PUBLIC_KEY: optional,
+    VAPID_PRIVATE_KEY: optional,
+    VAPID_SUBJECT: z.string().optional().transform((v) => v?.trim() || "https://crystalinnovationhub.com.ng"),
+    // The API's public address, for calendar links (e.g. https://api.crystalinnovationhub.com.ng).
+    // Left empty, it is worked out from each request.
+    API_PUBLIC_URL: z.url().optional().or(z.literal("").transform(() => undefined)),
   })
   .superRefine((v, ctx) => {
     const provider = v.EMAIL_PROVIDER ?? (v.RESEND_API_KEY ? "resend" : "console");
@@ -45,6 +55,9 @@ const schema = z
       for (const key of ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"] as const) {
         if (!v[key]) ctx.addIssue({ code: "custom", path: [key], message: "is required when EMAIL_PROVIDER=smtp" });
       }
+    }
+    if (Boolean(v.VAPID_PUBLIC_KEY) !== Boolean(v.VAPID_PRIVATE_KEY)) {
+      ctx.addIssue({ code: "custom", path: [v.VAPID_PUBLIC_KEY ? "VAPID_PRIVATE_KEY" : "VAPID_PUBLIC_KEY"], message: "set both VAPID keys, or neither" });
     }
     if (provider === "resend" && !v.RESEND_API_KEY) {
       ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "is required when EMAIL_PROVIDER=resend" });

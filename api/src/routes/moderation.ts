@@ -193,7 +193,7 @@ moderationRouter.get("/live", async (req, res) => {
       .eq("hidden", false)
       .order("created_at")
       .limit(100),
-    admin.from("programmes").select("id, title").order("title"),
+    admin.from("programmes").select("id, title").order("sort_order").order("title"),
   ]);
 
   const liveIds = new Set(live.map((c) => c.id));
@@ -237,7 +237,7 @@ moderationRouter.get("/discussions", async (req, res) => {
   if (filter === "unanswered") q = q.eq("kind", "question").eq("answered", false).eq("hidden", false);
   if (filter === "pinned") q = q.eq("pinned", true);
   if (filter === "hidden") q = q.eq("hidden", true);
-  const [{ data, error }, { data: programmes }] = await Promise.all([q, admin.from("programmes").select("id, title").order("title")]);
+  const [{ data, error }, { data: programmes }] = await Promise.all([q, admin.from("programmes").select("id, title").order("sort_order").order("title")]);
   if (error) return res.status(500).json({ error: "Could not load discussions." });
   const people = await peopleById(data.map((t) => t.author_id));
   res.json({
@@ -358,7 +358,7 @@ moderationRouter.get("/activity", async (req, res) => {
   const page = items.slice(0, 100);
   const [people, { data: programmes }] = await Promise.all([
     peopleById(page.map((i) => i.actor_id)),
-    admin.from("programmes").select("id, title").order("title"),
+    admin.from("programmes").select("id, title").order("sort_order").order("title"),
   ]);
   const titles = Object.fromEntries((programmes ?? []).map((p) => [p.id, p.title]));
   res.json({
@@ -373,7 +373,7 @@ moderationRouter.get("/activity", async (req, res) => {
 moderationRouter.get("/reports", async (_req, res) => {
   const now = new Date().toISOString();
   const [{ data: programmes }, { data: students }, { data: tutors }, { data: classes }, { data: assessments }, { data: subs }, { data: questions }] = await Promise.all([
-    admin.from("programmes").select("id, title, is_active").order("title"),
+    admin.from("programmes").select("id, title, is_active").order("sort_order").order("title"),
     admin.from("programme_students").select("programme_id"),
     admin.from("programme_tutors").select("programme_id"),
     admin.from("classes").select("programme_id, ends_at"),
